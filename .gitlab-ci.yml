@@ -41,7 +41,7 @@ deploy_gelbooru:
   - job1_build
  script:
   - 'docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true'
-  - 'docker build -t yandere-channel-bot .'
+  - 'docker build -t gelbooruchannelbott .'
   - 'docker run --restart=always --name gelbooruchannelbot -d -e CHANNEL_BOT_TOKEN -e CHANNEL_CHAT_ID gelbooruchannelbot'
  environment:
     name: gelbooru.com
