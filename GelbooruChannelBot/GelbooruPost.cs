@@ -103,7 +103,7 @@ namespace GelbooruChannelBot
 
         public string GetPostLink()
         {
-            return @"https://gelbooru.com/index.php?page=post&s=view&id={post.Id}";
+            return @"https://gelbooru.com/index.php?page=post&s=view&id={Id}";
         }
 
         public string GetId()
