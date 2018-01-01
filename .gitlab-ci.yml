@@ -25,7 +25,7 @@ deploy_yandere:
  script:
   - 'docker stop yandere-channel-bot || true && docker rm yandere-channel-bot || true'
   - 'docker build -t yandere-channel-bot .'
-  - 'docker run --restart=always --name yandere-channel-bot -d yandere-channel-bot'
+  - 'docker run --restart=always --name yandere-channel-bot -d -e CHANNEL_BOT_TOKEN -e CHANNEL_CHAT_ID yandere-channel-bot'
  environment:
     name: Yande.re
  only:
@@ -42,7 +42,7 @@ deploy_gelbooru:
  script:
   - 'docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true'
   - 'docker build -t yandere-channel-bot .'
-  - 'docker run --restart=always --name gelbooruchannelbot -d gelbooruchannelbot'
+  - 'docker run --restart=always --name gelbooruchannelbot -d -e CHANNEL_BOT_TOKEN -e CHANNEL_CHAT_ID gelbooruchannelbot'
  environment:
     name: gelbooru.com
  only:
