@@ -17,6 +17,9 @@ job1_build:
 job1_deploy:
  image: docker:latest
  stage: deploy
+ net: host
+ devices:
+  - /dev/net/tun:/dev/net/tun
  dependencies:
   - job1_build
  script:
