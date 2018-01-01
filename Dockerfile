@@ -3,4 +3,4 @@ COPY . /app
 WORKDIR /app
 
 WORKDIR /app
-ENTRYPOINT dotnet run --configuration Release --project ./src/GelbooruChannelBot
+ENTRYPOINT dotnet run --configuration Release --project ./GelbooruChannelBot
