@@ -41,7 +41,7 @@ namespace GelbooruChannelBot
             {
                 Bot = new TelegramBotClient(Environment.GetEnvironmentVariable("CHANNEL_BOT_TOKEN"));
                 ChatId = long.Parse(Environment.GetEnvironmentVariable("CHANNEL_CHAT_ID"));
-                Url = Environment.GetEnvironmentVariable("CI_ENVIRONMENT_URL");
+                Url = Environment.GetEnvironmentVariable("CHANNEL_REQUEST_URL");
             }
             catch (Exception e)
             {

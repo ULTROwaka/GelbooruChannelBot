@@ -18,6 +18,7 @@ deploy_yandere:
  variables:
     CHANNEL_BOT_TOKEN: "394374628:AAENGbV3XS3gQqZ7Q6Dn3FNbqjuumKAaqcQ"
     CHANNEL_CHAT_ID: "-1001115851123"
+    CHANNEL_REQUEST_URL: "https://yande.re/post.json?*limit*"
  image: docker:latest
  stage: deploy
  dependencies:
@@ -35,17 +36,17 @@ deploy_gelbooru:
  variables:
     CHANNEL_BOT_TOKEN: "468402185:AAGUZpYGp5dGsy-sFf2_3UT6zHs_tJbaVdg"
     CHANNEL_CHAT_ID: "-1001114198374"
+    CHANNEL_REQUEST_URL: "https://gelbooru.com/index.php?*limit*&page=dapi&s=post&q=index&json=1"
  image: docker:latest
  stage: deploy
  dependencies:
   - job1_build
  script:
   - 'docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true'
-  - 'docker build -t yandere-channel-bot .'
+  - 'docker build -t gelbooruchannelbott .'
   - 'docker run --restart=always --name gelbooruchannelbot -d -e CHANNEL_BOT_TOKEN -e CHANNEL_CHAT_ID gelbooruchannelbot'
  environment:
-    name: gelbooru.com
+    name: Gelbooru.com
  only:
   - master
-
 
