@@ -108,7 +108,8 @@ namespace GelbooruChannelBot
                 Console.WriteLine($"{DateTime.UtcNow}: {e.Source}:::{e.Message}");
                 return null;
             }
-
+            bool firstTry = false;
+            if(storage.Count == 0) firstTry = true;
             //Сериализуем полученные данные
             using (var reader = new StreamReader(resp.GetResponseStream()))
             {
@@ -120,7 +121,11 @@ namespace GelbooruChannelBot
                     if (!storage.Contains(post.GetId()))
                     {
                         storage.Add(post.GetId());
-                        newPosts.Add(post);
+                        if (!firstTry)
+                        {
+                            newPosts.Add(post);
+                        }
+                        
                     }
                 }
                 Console.WriteLine($"(!) {DateTime.UtcNow}:New posts count {newPosts.Count}");
