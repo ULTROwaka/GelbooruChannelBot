@@ -16,8 +16,8 @@ job1_deploy:
  image: docker:latest
  stage: deploy
  script:
-  - 'docker stop GelbooruChannelBot || true && docker rm GelbooruChannelBot || true'
-  - 'docker build -t GelbooruChannelBot .'
-  - 'docker run --restart=always --name GelbooruChannelBot -d -e GelbooruChannelBot'
+  - 'docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true'
+  - 'docker build -t gelbooruchannelbot .'
+  - 'docker run --restart=always --name gelbooruchannelbot -d -e gelbooruchannelbot'
  only:
   - master
