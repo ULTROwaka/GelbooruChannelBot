@@ -22,7 +22,8 @@ namespace GelbooruChannelBot
         static readonly int MaxOldPostsCount = 40;
         static readonly int PostsPerCheck = 20;
         static readonly int WaitTime = 120000; //2 min
-        static readonly string _Url = $"https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1";
+        //static readonly string _Url = $"https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1";
+        static readonly string _Url = $"https://yande.re/post.json?";
 
         static void Main(string[] args)
         {
@@ -38,7 +39,7 @@ namespace GelbooruChannelBot
                 {
                     try
                     {
-                        SendImagesToChannel(GetNewestPosts<GelbooruPost>(_Url, OldPostIdList, PostsPerCheck));
+                        SendImagesToChannel(GetNewestPosts<YanderePost>(_Url, OldPostIdList, PostsPerCheck));
                     }
                     catch(Exception e)
                     {
@@ -61,7 +62,7 @@ namespace GelbooruChannelBot
         static List<IPost> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : IPost
         {
             List<IPost> newPosts = new List<IPost>();
-            url = String.Concat(url, $"&limit={count}");
+            url = String.Concat(url, $"limit={count}");
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Timeout = 15000;
