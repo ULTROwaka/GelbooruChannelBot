@@ -6,10 +6,14 @@
     <ProjectGuid>ef56a0d1-2997-430e-a1f3-40cd0bcd6618</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
+    <None Include=".dockerignore">
+      <DependentUpon>Dockerfile</DependentUpon>
+    </None>
     <None Include="docker-compose.ci.build.yml" />
     <None Include="docker-compose.override.yml">
       <DependentUpon>docker-compose.yml</DependentUpon>
     </None>
     <None Include="docker-compose.yml" />
+    <None Include="Dockerfile" />
   </ItemGroup>
 </Project>
