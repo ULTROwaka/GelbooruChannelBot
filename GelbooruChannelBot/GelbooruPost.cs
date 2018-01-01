@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace GelbooruChannelBot
 {
-    class Post : IPost
+    class GelbooruPost : IPost
     {
         [JsonProperty("directory")]
         public string Directory { get; set; }
@@ -98,12 +98,32 @@ namespace GelbooruChannelBot
 
         public bool Equals(IPost other)
         {
-            return Hash.Equals(other.Hash);
+            return Hash.Equals(other.GetHash());
         }
 
         public string GetPostLink()
         {
             return @"https://gelbooru.com/index.php?page=post&s=view&id={post.Id}";
+        }
+
+        public string GetId()
+        {
+            return Id;
+        }
+
+        public string GetTags()
+        {
+            return Tags;
+        }
+
+        public string GetFileUrl()
+        {
+            return FileUrl;
+        }
+
+        public string GetHash()
+        {
+            return Hash;
         }
     }
 }

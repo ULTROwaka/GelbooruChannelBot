@@ -50,7 +50,7 @@ namespace GelbooruChannelBot
             Console.ReadLine();
         }
 
-        static List<IPost> GetNewestPosts(string url, List<string> storage, int count = 1)
+        static List<IPost> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : IPost
         {
             List<IPost> newPosts = new List<IPost>();
             url = String.Concat(url, $"&limit={count}");
@@ -73,18 +73,19 @@ namespace GelbooruChannelBot
             //Сериализуем полученные данные
             using (var reader = new StreamReader(resp.GetResponseStream()))
             {
-                var posts = JsonConvert.DeserializeObject<List<Post>>(reader.ReadToEnd());
+                var posts = JsonConvert.DeserializeObject<List<T>>(reader.ReadToEnd());
 
                 foreach (var post in posts)
                 {
                     //Выбираем только новые посты
-                    if (!storage.Contains(post.Id))
+                    if (!storage.Contains(post.GetId()))
                     {
-                        storage.Add(post.Id);
+                        storage.Add(post.GetId());
                         newPosts.Add(post);
                     }
                 }
             }
+
             //Триммируем список старых постов (память не резиновая)
             if (storage.Count > MaxOldPostsCount) storage.RemoveRange(0, storage.Count - MaxOldPostsCount);
         
@@ -99,7 +100,7 @@ namespace GelbooruChannelBot
             List<Task<Telegram.Bot.Types.Message>> taskList = new List<Task<Telegram.Bot.Types.Message>>();
             foreach (var post in storage)
             {
-                if (post.Tags.Contains("#yaoi") || post.Tags.Contains("#male_focus")) continue; //Yaoi for gays, oh wait...
+                if (post.GetTags().Contains("#yaoi") || post.GetTags().Contains("#male_focus")) continue; //Yaoi for gays, oh wait...
 
                 var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
                                     {
@@ -109,23 +110,23 @@ namespace GelbooruChannelBot
                 {
                     string tags = post.GetTags(15);
                     //webm отправляем как ссылку
-                    if (post.FileUrl.Contains(".webm"))
+                    if (post.GetFileUrl().Contains(".webm"))
                     {
-                        await Bot.SendTextMessageAsync(ChatId, $"WebM\n {post.FileUrl} \n{post.GetTags(10)}", replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendTextMessageAsync(ChatId, $"WebM\n <a href={"\""}{post.GetFileUrl()}{"\""} />\n{post.GetTags(10)}",parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
                         continue;
                     }
                     //gif отправляем как документ
-                    if (post.FileUrl.Contains(".gif"))
+                    if (post.GetFileUrl().Contains(".gif"))
                     {
-                        await Bot.SendDocumentAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.FileUrl), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendDocumentAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
                         continue;
                     }
                     //jpeg, png и все остальное отправляем как фото
-                    await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.FileUrl), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                    await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.UtcNow}: {e.Message} (url: {post.FileUrl})");
+                    Console.WriteLine($"{DateTime.UtcNow}: {e.Message} (url: {post.GetFileUrl()})");
                 }
             }
 

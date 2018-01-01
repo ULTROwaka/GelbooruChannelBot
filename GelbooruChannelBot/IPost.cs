@@ -6,10 +6,10 @@ namespace GelbooruChannelBot
 { 
     interface IPost : IEquatable<IPost>
     {
-        string Id { get; }
-        string Tags { get; }
-        string FileUrl { get; }
-        string Hash { get; }
+        string GetId();
+        string GetTags();
+        string GetFileUrl();
+        string GetHash();
         string GetTags(int count);
         string GetPostLink();
     }
