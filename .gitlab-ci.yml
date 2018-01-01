@@ -5,9 +5,7 @@ stages:
   
 job1_build:
  artifacts:
-   paths:
-    - bin
-    - obj
+   untracked: true
  image: microsoft/dotnet:latest
  stage: build
  script:
