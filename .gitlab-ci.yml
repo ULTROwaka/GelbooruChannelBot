@@ -23,6 +23,6 @@ job1_deploy:
  script:
   - 'docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true'
   - 'docker build -t gelbooruchannelbot .'
-  - 'docker run --restart=always --name gelbooruchannelbot -d -e gelbooruchannelbot'
+  - 'docker run --restart=always --name gelbooruchannelbot -d gelbooruchannelbot'
  only:
   - master
