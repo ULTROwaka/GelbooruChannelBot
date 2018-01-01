@@ -149,7 +149,7 @@ namespace GelbooruChannelBot
                     var str = post.GetFileUrl();
                     if (post.GetFileUrl().Contains(".webm"))
                     {
-                        await Bot.SendTextMessageAsync(ChatId, $"💓<a href=\"{post.GetPostLink()}\">WebM Link</a> 💓\n{post.GetTags(10)}",parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendTextMessageAsync(ChatId, $"💓<a href=\"{post.GetPostLink()}\">WebM Link</a>💓\n{post.GetTags(10)}",parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
                         continue;
                     }
                     //gif отправляем как документ
