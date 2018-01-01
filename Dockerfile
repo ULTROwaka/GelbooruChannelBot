@@ -1,13 +1,9 @@
-FROM microsoft/dotnet:2.0-runtime
-RUN pwd
-RUN ls ./var/lib/docker
-RUN ls ./var/lib/docker/tmp
-RUN ls ./var/lib/docker/tmp/docker-builder767315267/
-RUN env
+FROM microsoft/dotnet:latest
 
 COPY . /app
-ARG source
-RUN echo $source
+RUN bash -c 'ls -la /app'
 WORKDIR /app
-COPY ${source:-GelbooruChannelBot/bin/Debug/netcoreapp2.0} .
-ENTRYPOINT ["dotnet", "GelbooruChannelBot.dll
+#RUN dotnet restore GelbooruChannelBot.sln
+
+ENTRYPOINT dotnet run --configuration Release --project ./GelbooruChannelBot
+ruChannelBot.dll

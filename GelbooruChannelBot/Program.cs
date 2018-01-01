@@ -5,6 +5,7 @@ using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Resources;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -25,6 +26,8 @@ namespace GelbooruChannelBot
 
         static void Main(string[] args)
         {
+            System.Net.ServicePointManager.ServerCertificateValidationCallback += new System.Net.Security.RemoteCertificateValidationCallback(RemoteCertValidateCallback);
+
             ResourceManager resManager = new ResourceManager("GelbooruChannelBot.Properties.Resources", Assembly.GetExecutingAssembly());
             Bot = new TelegramBotClient(resManager.GetString("TelegramToken"));
             ChatId = long.Parse(resManager.GetString("ChatId"));
@@ -48,6 +51,11 @@ namespace GelbooruChannelBot
             }).Start();
 
             Console.ReadLine();
+        }
+
+        public static bool RemoteCertValidateCallback(object sender, X509Certificate cert, X509Chain chain, System.Net.Security.SslPolicyErrors error)
+        {
+            return true;
         }
 
         static List<IPost> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : IPost

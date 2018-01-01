@@ -1,8 +1,10 @@
 stages:
   - build
-  - test
   - deploy
+  
 job1_build:
+ artifacts:
+   untracked: true
  image: microsoft/dotnet:latest
  stage: build
  script:
@@ -15,9 +17,11 @@ job1_build:
 job1_deploy:
  image: docker:latest
  stage: deploy
+ dependencies:
+  - job1_build
  script:
   - 'docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true'
   - 'docker build -t gelbooruchannelbot .'
-  - 'docker run --restart=always --name gelbooruchannelbot -d -e gelbooruchannelbot'
+  - 'docker run --restart=always --name gelbooruchannelbot -d gelbooruchannelbot'
  only:
   - master
