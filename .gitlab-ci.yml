@@ -44,7 +44,7 @@ deploy_gelbooru:
   - 'docker build -t gelbooruchannelbott .'
   - 'docker run --restart=always --name gelbooruchannelbot -d -e CHANNEL_BOT_TOKEN -e CHANNEL_CHAT_ID gelbooruchannelbot'
  environment:
-    name: gelbooru.com
+    name: Gelbooru.com
  only:
   - master
 
