@@ -35,7 +35,7 @@ namespace GelbooruChannelBot
                 {
                     try
                     {
-                        SendImagesToChannel(GetNewestPosts(_Url, OldPostIdList, PostsPerCheck));
+                        SendImagesToChannel(GetNewestPosts<GelbooruPost>(_Url, OldPostIdList, PostsPerCheck));
                     }
                     catch(Exception e)
                     {
