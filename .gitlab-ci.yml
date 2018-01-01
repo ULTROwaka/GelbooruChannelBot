@@ -26,9 +26,9 @@ deploy_yandere:
   - 'docker stop yandere-channel-bot || true && docker rm yandere-channel-bot || true'
   - 'docker build -t yandere-channel-bot .'
   - 'docker run --restart=always --name yandere-channel-bot -d yandere-channel-bot'
-  environment:
+ environment:
     name: Yande.re
-  only:
+ only:
   - master
   
 deploy_gelbooru:
@@ -43,9 +43,9 @@ deploy_gelbooru:
   - 'docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true'
   - 'docker build -t yandere-channel-bot .'
   - 'docker run --restart=always --name gelbooruchannelbot -d gelbooruchannelbot'
-  environment:
+ environment:
     name: gelbooru.com
-  only:
+ only:
   - master
 
 
