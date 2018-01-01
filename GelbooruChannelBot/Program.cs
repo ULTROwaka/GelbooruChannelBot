@@ -45,10 +45,10 @@ namespace GelbooruChannelBot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Message}");
+                Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
             }
 
-
+            Console.WriteLine($"(!) {DateTime.UtcNow}: {Url}");
             Bot.Timeout = new TimeSpan(0, 0, 15);
             new Thread(() =>
             {
@@ -102,7 +102,7 @@ namespace GelbooruChannelBot
             }
             catch(Exception e)//На случай отсутствия подключения к интернету
             {
-                Console.WriteLine($"{DateTime.UtcNow}: {e.Message}");
+                Console.WriteLine($"{DateTime.UtcNow}: {e.Source}:::{e.Message}");
                 return null;
             }
 
