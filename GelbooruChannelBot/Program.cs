@@ -25,6 +25,8 @@ namespace GelbooruChannelBot
 
         static void Main(string[] args)
         {
+            client.ClientCredentials.ServiceCertificate.SslCertificateAuthentication = new X509ServiceCertificateAuthentication() { CertificateValidationMode = X509CertificateValidationMode.None, RevocationMode = X509RevocationMode.NoCheck };
+            
             ResourceManager resManager = new ResourceManager("GelbooruChannelBot.Properties.Resources", Assembly.GetExecutingAssembly());
             Bot = new TelegramBotClient(resManager.GetString("TelegramToken"));
             ChatId = long.Parse(resManager.GetString("ChatId"));
