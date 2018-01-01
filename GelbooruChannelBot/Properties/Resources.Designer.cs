@@ -61,7 +61,7 @@ namespace GelbooruChannelBot.Properties {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на -1001114198374.
+        ///   Ищет локализованную строку, похожую на -1.
         /// </summary>
         internal static string ChatId {
             get {
@@ -70,7 +70,7 @@ namespace GelbooruChannelBot.Properties {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на 468402185:AAGUZpYGp5dGsy-sFf2_3UT6zHs_tJbaVdg.
+        ///   Ищет локализованную строку, похожую на Token.
         /// </summary>
         internal static string TelegramToken {
             get {

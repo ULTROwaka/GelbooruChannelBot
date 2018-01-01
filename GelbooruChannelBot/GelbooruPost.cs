@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace GelbooruChannelBot
 {
-    class GelbooruPost : IPost
+    class GelbooruPost : Post
     {
         [JsonProperty("directory")]
         public string Directory { get; set; }
@@ -41,45 +41,48 @@ namespace GelbooruChannelBot
             get { return _tags; }
             set
             {
-                foreach (var tag in value.Split(' '))
-                {
-                    if (IsUnavaibleTag(tag)) continue;
-                    _tags = String.Concat(_tags, String.Concat(" #", tag.Replace("-", "_").Replace("/", "_").Replace("(", "").Replace(")", "")));
-                }
+                _tags = FilterateTags(value);
             }
         }
         [JsonProperty("width")]
         public string Width { get; set; }
         [JsonProperty("file_url")]
-        public string FileUrl { get; set; }
+        public string FileUrl { get; set; } 
 
-        private List<string> ImportantTags = new List<string> {"#loli", "#futanari", "#3d", "#yuri", "#happy_sex", "#vaginal",
-           "#cum_in_pussy", "#cervical_penetration", "#x_ray", "#ahegao", "#animated", "#animated_gif", "#cosplay", "#looking_at_viewer",
-            "#looking_at_viewer", "#as109", "#feral_lemma", "#bestiality", "#torogao",  "#thigh_high", "#dildo", "#bondage", "#masturbation",
-            "#solo", "#anus", "#huge_penis", "#anal", "#oral", "#gokkun", "#gs_mantis", "#wntame"};
-
-        private bool IsUnavaibleTag(string tag)
+        public override bool Equals(Post other)
         {
-            Regex reg = new Regex(@"[a-zA-Z]*[\d!+\/&?=:><;^@]+[a-zA-Z]*");
-            return reg.IsMatch(tag) || tag.Equals("") || tag.Equals(" ");
-        }     
-
-        private List<string> GetImportantTags()
-        {
-            string[] tagsArray = _tags.Split(' ');          
-            List<string> newTagsString = new List<string>();
-            foreach (string tag in tagsArray)
-            {
-                if (!ImportantTags.Contains(tag)) continue;
-                newTagsString.Add(tag);
-            }
-            return newTagsString;          
+            return Hash.Equals(other.GetHash());
         }
 
-        public string GetTags(int count)
+        public override string GetPostLink()
         {
-            List<string> tags = GetImportantTags();
-            if(tags.Count < count)
+            return $"https://gelbooru.com/index.php?page=post&s=view&id={Id}";
+        }
+
+        public override string GetId()
+        {
+            return Id;
+        }
+
+        public override string GetTags()
+        {
+            return Tags;
+        }
+
+        public override string GetFileUrl()
+        {
+            return FileUrl;
+        }
+
+        public override string GetHash()
+        {
+            return Hash;
+        }
+
+        public override string GetTags(int count)
+        {
+            List<string> tags = GetImportantTags(_tags);
+            if (tags.Count < count)
             {
                 string[] tagsArray = _tags.Split(' ');
                 foreach (string tag in tagsArray)
@@ -91,39 +94,5 @@ namespace GelbooruChannelBot
             return String.Join(' ', tags);
         }
 
-        public override string ToString()
-        {
-            return $"{FileUrl}\n*💗 WEBM 💗*\nTags:\n{GetTags(10)}";
-        }
-
-        public bool Equals(IPost other)
-        {
-            return Hash.Equals(other.GetHash());
-        }
-
-        public string GetPostLink()
-        {
-            return $"https://gelbooru.com/index.php?page=post&s=view&id={Id}";
-        }
-
-        public string GetId()
-        {
-            return Id;
-        }
-
-        public string GetTags()
-        {
-            return Tags;
-        }
-
-        public string GetFileUrl()
-        {
-            return FileUrl;
-        }
-
-        public string GetHash()
-        {
-            return Hash;
-        }
     }
 }

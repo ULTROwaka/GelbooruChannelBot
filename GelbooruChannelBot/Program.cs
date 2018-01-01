@@ -18,20 +18,37 @@ namespace GelbooruChannelBot
     {
         private static TelegramBotClient Bot;
         private static long ChatId;
+        static string Url;
         static List<string> OldPostIdList = new List<string>();
         static readonly int MaxOldPostsCount = 40;
         static readonly int PostsPerCheck = 20;
         static readonly int WaitTime = 120000; //2 min
-        //static readonly string _Url = $"https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1";
-        static readonly string _Url = $"https://yande.re/post.json?";
+        /*
+        static readonly string _GelbooruRequestUrl = $"https://gelbooru.com/index.php?*limit*&page=dapi&s=post&q=index&json=1";
+        static readonly string _YandereRequestUrl = $"https://yande.re/post.json?*limit*";
+        */
 
         static void Main(string[] args)
         {
-            System.Net.ServicePointManager.ServerCertificateValidationCallback += new System.Net.Security.RemoteCertificateValidationCallback(RemoteCertValidateCallback);
-
+            ServicePointManager.ServerCertificateValidationCallback += new System.Net.Security.RemoteCertificateValidationCallback(RemoteCertValidateCallback);
+            /*
             ResourceManager resManager = new ResourceManager("GelbooruChannelBot.Properties.Resources", Assembly.GetExecutingAssembly());
             Bot = new TelegramBotClient(resManager.GetString("TelegramToken"));
             ChatId = long.Parse(resManager.GetString("ChatId"));
+            */
+
+            try
+            {
+                Bot = new TelegramBotClient(Environment.GetEnvironmentVariable("CHANNEL_BOT_TOKEN"));
+                ChatId = long.Parse(Environment.GetEnvironmentVariable("CHANNEL_CHAT_ID"));
+                Url = Environment.GetEnvironmentVariable("CI_ENVIRONMENT_URL");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Message}");
+            }
+
+
             Bot.Timeout = new TimeSpan(0, 0, 15);
             new Thread(() =>
             {
@@ -39,7 +56,17 @@ namespace GelbooruChannelBot
                 {
                     try
                     {
-                        SendImagesToChannel(GetNewestPosts<YanderePost>(_Url, OldPostIdList, PostsPerCheck));
+                        if (Url.Contains("gelbooru"))
+                        {
+                            SendImagesToChannel(GetNewestPosts<GelbooruPost>(Url, OldPostIdList, PostsPerCheck));
+                        }
+                        else
+                        {
+                            if (Url.Contains("yandere"))
+                            {
+                                SendImagesToChannel(GetNewestPosts<YanderePost>(Url, OldPostIdList, PostsPerCheck));
+                            }
+                        }
                     }
                     catch(Exception e)
                     {
@@ -59,10 +86,10 @@ namespace GelbooruChannelBot
             return true;
         }
 
-        static List<IPost> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : IPost
+        static List<Post> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : Post
         {
-            List<IPost> newPosts = new List<IPost>();
-            url = String.Concat(url, $"limit={count}");
+            List<Post> newPosts = new List<Post>();
+            url = url.Replace("*limit*", $"limit={count}");
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Timeout = 15000;
@@ -102,7 +129,7 @@ namespace GelbooruChannelBot
             return newPosts;
         }
 
-        static async void SendImagesToChannel(List<IPost> storage)
+        static async void SendImagesToChannel(List<Post> storage)
         {
             if (storage.Count == 0 || storage == null) return;
 
@@ -119,6 +146,7 @@ namespace GelbooruChannelBot
                 {
                     string tags = post.GetTags(15);
                     //webm отправляем как ссылку
+                    var str = post.GetFileUrl();
                     if (post.GetFileUrl().Contains(".webm"))
                     {
                         await Bot.SendTextMessageAsync(ChatId, $"💓<a href=\"{post.GetPostLink()}\">WebM Link</a> 💓\n{post.GetTags(10)}",parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
@@ -135,7 +163,7 @@ namespace GelbooruChannelBot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.UtcNow}: {e.Message} (url: {post.GetFileUrl()})");
+                    Console.WriteLine($"{DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})");
                 }
             }
 
