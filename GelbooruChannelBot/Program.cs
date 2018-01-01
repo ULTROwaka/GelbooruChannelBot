@@ -52,12 +52,14 @@ namespace GelbooruChannelBot
             Bot.Timeout = new TimeSpan(0, 0, 15);
             new Thread(() =>
             {
+                Console.WriteLine($"(!) {DateTime.UtcNow}: Thread Created");
                 while (true)
                 {
                     try
                     {
+                        Console.WriteLine($"(!) {DateTime.UtcNow}:Try URL {Url}");
                         if (Url.Contains("gelbooru"))
-                        {
+                        {                           
                             SendImagesToChannel(GetNewestPosts<GelbooruPost>(Url, OldPostIdList, PostsPerCheck));
                         }
                         else
@@ -91,6 +93,7 @@ namespace GelbooruChannelBot
             List<Post> newPosts = new List<Post>();
             url = url.Replace("*limit*", $"limit={count}");
 
+            Console.WriteLine($"(!) {DateTime.UtcNow}: Request {url}");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Timeout = 15000;
             HttpWebResponse resp;
@@ -120,6 +123,7 @@ namespace GelbooruChannelBot
                         newPosts.Add(post);
                     }
                 }
+                Console.WriteLine($"(!) {DateTime.UtcNow}:New posts count {newPosts.Count}");
             }
 
             //Триммируем список старых постов (память не резиновая)
@@ -132,7 +136,7 @@ namespace GelbooruChannelBot
         static async void SendImagesToChannel(List<Post> storage)
         {
             if (storage.Count == 0 || storage == null) return;
-
+            Console.WriteLine($"(!) {DateTime.UtcNow}:Sending to channel {ChatId}");
             List<Task<Telegram.Bot.Types.Message>> taskList = new List<Task<Telegram.Bot.Types.Message>>();
             foreach (var post in storage)
             {
@@ -149,16 +153,19 @@ namespace GelbooruChannelBot
                     var str = post.GetFileUrl();
                     if (post.GetFileUrl().Contains(".webm"))
                     {
+                        Console.WriteLine($"(!) {DateTime.UtcNow}:Send WebM {post.GetPostLink()}");
                         await Bot.SendTextMessageAsync(ChatId, $"💓<a href=\"{post.GetPostLink()}\">WebM Link</a>💓\n{post.GetTags(10)}",parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
                         continue;
                     }
                     //gif отправляем как документ
                     if (post.GetFileUrl().Contains(".gif"))
                     {
+                        Console.WriteLine($"(!) {DateTime.UtcNow}:Send Gif {post.GetFileUrl()}");
                         await Bot.SendDocumentAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
                         continue;
                     }
                     //jpeg, png и все остальное отправляем как фото
+                    Console.WriteLine($"(!) {DateTime.UtcNow}:Send Pic {post.GetFileUrl()}");
                     await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
                 }
                 catch (Exception e)

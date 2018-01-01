@@ -8,8 +8,6 @@ namespace GelbooruChannelBot
 {
     class YanderePost : Post
     {
-        static string RequestUrl = "https://yande.re/post.json?";
-
         [JsonProperty("id")]
         public long Id { get; set; }
 
