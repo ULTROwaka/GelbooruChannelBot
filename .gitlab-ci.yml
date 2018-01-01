@@ -1,0 +1,22 @@
+image : microsoft/dotnet:latest
+stages:
+  - build
+  - test
+  - deploy
+job1_build:
+ stage: build
+ script:
+  - 'dotnet restore GelbooruChannelBot'
+  - 'dotnet build GelbooruChannelBot'
+ only:
+   - dev
+   - master
+
+job1_deploy:
+ stage: deploy
+ script:
+  - 'docker stop GelbooruChannelBot || true && docker rm GelbooruChannelBot || true'
+  - 'docker build -t GelbooruChannelBot .'
+  - 'docker run --restart=always --name GelbooruChannelBot -d -e GelbooruChannelBot'
+ only:
+  - master

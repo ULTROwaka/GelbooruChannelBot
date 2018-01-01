@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  gelbooruchannelbot:
+    image: gelbooruchannelbot
+    build:
+      context: ./GelbooruChannelBot
+      dockerfile: Dockerfile
