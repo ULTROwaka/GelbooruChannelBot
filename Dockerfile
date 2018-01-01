@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.0-sdk-jessie
+FROM microsoft/dotnet:2.0.0-sdk
 RUN bash -c 'echo -e START'
 COPY . /app
 RUN bash -c 'echo -e /app ls'
