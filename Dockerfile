@@ -1,12 +1,8 @@
 FROM microsoft/dotnet:2.0.0-sdk
-RUN bash -c 'echo -e START'
-COPY . /app
-RUN bash -c 'echo -e /app ls'
 
+COPY . /app
 RUN bash -c 'ls -la /app'
 WORKDIR /app
-RUN dotnet restore GelbooruChannelBot.sln
-
-WORKDIR /app
+#RUN dotnet restore GelbooruChannelBot.sln
 
 ENTRYPOINT dotnet run --configuration Release --project ./GelbooruChannelBot
