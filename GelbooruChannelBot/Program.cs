@@ -64,7 +64,7 @@ namespace GelbooruChannelBot
                         }
                         else
                         {
-                            if (Url.Contains("yandere"))
+                            if (Url.Contains("yande.re"))
                             {
                                 SendImagesToChannel(GetNewestPosts<YanderePost>(Url, OldPostIdList, PostsPerCheck));
                             }
