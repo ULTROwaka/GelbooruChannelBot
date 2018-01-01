@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.0-sdk-jessie
+FROM microsoft/dotnet:latest
 
 COPY . /app
 RUN bash -c 'ls -la /app'
