@@ -1,8 +1,11 @@
 FROM microsoft/dotnet:2.0-sdk-jessie
-
+RUN bash -c 'echo -e START'
 COPY . /app
+RUN bash -c 'echo -e /app ls'
+
+RUN bash -c 'ls -la /app'
 WORKDIR /app
-RUN dotnet restore
+RUN dotnet restore GelbooruChannelBot.sln
 
 WORKDIR /app
 
