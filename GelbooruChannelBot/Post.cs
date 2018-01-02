@@ -48,6 +48,7 @@ namespace GelbooruChannelBot
         abstract public string GetHash();
         abstract public string GetTags(int count);
         abstract public string GetPostLink();
+        abstract public string GetPostAuthor();
 
         abstract public bool Equals(Post other);
     }

@@ -151,5 +151,10 @@ namespace GelbooruChannelBot
             }
             return String.Join(' ', tags);
         }
+
+        public override string GetPostAuthor()
+        {
+            return Author;
+        }
     }
 }

@@ -18,24 +18,30 @@ namespace GelbooruChannelBot
     {
         private static TelegramBotClient Bot;
         private static long ChatId;
+        private static TelegramBotClient AnounceBot;
+        private static long AnounceChatId;
         static string Url;
         static List<string> OldPostIdList = new List<string>();
         static readonly int MaxOldPostsCount = 40;
         static readonly int PostsPerCheck = 20;
         static readonly int WaitTime = 120000; //2 min
-        /*
-        static readonly string _GelbooruRequestUrl = $"https://gelbooru.com/index.php?*limit*&page=dapi&s=post&q=index&json=1";
-        static readonly string _YandereRequestUrl = $"https://yande.re/post.json?*limit*";
-        */
+
+        static string Instance = "N/A";
 
         static void Main(string[] args)
         {
             ServicePointManager.ServerCertificateValidationCallback += new System.Net.Security.RemoteCertificateValidationCallback(RemoteCertValidateCallback);
-            /*
-            ResourceManager resManager = new ResourceManager("GelbooruChannelBot.Properties.Resources", Assembly.GetExecutingAssembly());
-            Bot = new TelegramBotClient(resManager.GetString("TelegramToken"));
-            ChatId = long.Parse(resManager.GetString("ChatId"));
-            */
+
+            try
+            {
+                AnounceBot = new TelegramBotClient(Environment.GetEnvironmentVariable("ANNOUNCE_CHANNEL_BOT_TOKEN"));
+                AnounceChatId = long.Parse(Environment.GetEnvironmentVariable("ANNOUNCE_CHANNEL_CHAT_ID"));
+            }
+            catch
+            {
+                AnounceBot = null;
+                AnounceChatId = 0;
+            }
 
             try
             {
@@ -49,6 +55,17 @@ namespace GelbooruChannelBot
             }
 
             Console.WriteLine($"(!) {DateTime.UtcNow}: {Url}");
+            if (Url.Contains("gelbooru")) Instance = "Gelbooru";
+            else if (Url.Contains("yande.re")) Instance = "Yandere";
+
+            if (AnounceBot!=null && AnounceChatId != 0)
+            {
+                AnounceBot.SendTextMessageAsync(AnounceChatId, $"{Instance} Start \n" +
+                    $"CHANNEL_BOT_TOKEN: {Environment.GetEnvironmentVariable("CHANNEL_BOT_TOKEN")}" +
+                    $"CHANNEL_CHAT_ID: {Environment.GetEnvironmentVariable("CHANNEL_CHAT_ID")}" +
+                    $"CHANNEL_REQUEST_URL: {Environment.GetEnvironmentVariable("CHANNEL_REQUEST_URL")}");
+            }
+           
             Bot.Timeout = new TimeSpan(0, 0, 15);
             new Thread(() =>
             {
@@ -90,6 +107,9 @@ namespace GelbooruChannelBot
 
         static List<Post> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : Post
         {
+            bool firstTry = false;
+            if (storage.Count == 0) firstTry = true;
+
             List<Post> newPosts = new List<Post>();
             url = url.Replace("*limit*", $"limit={count}");
 
@@ -108,8 +128,7 @@ namespace GelbooruChannelBot
                 Console.WriteLine($"{DateTime.UtcNow}: {e.Source}:::{e.Message}");
                 return null;
             }
-            bool firstTry = false;
-            if(storage.Count == 0) firstTry = true;
+
             //Сериализуем полученные данные
             using (var reader = new StreamReader(resp.GetResponseStream()))
             {
@@ -117,8 +136,8 @@ namespace GelbooruChannelBot
 
                 foreach (var post in posts)
                 {
-                    //Выбираем только новые посты
-                    if (!storage.Contains(post.GetId()))
+                    //Выбираем только новые посты, no homo
+                    if (!storage.Contains(post.GetId()) && !post.GetTags().Contains("#yaoi") && !post.GetTags().Contains("#male_focus"))
                     {
                         storage.Add(post.GetId());
                         if (!firstTry)
@@ -138,15 +157,83 @@ namespace GelbooruChannelBot
             return newPosts;
         }
 
+        static Dictionary<string, List<Post>> GetAlbums(List<Post> storage)
+        {
+            var albums = new Dictionary<string, List<Post>>();
+
+            foreach (var post in storage)
+            {                
+                if (post.GetFileUrl().Contains(".webm") || post.GetFileUrl().Contains(".gif"))
+                {
+                    albums.Add(post.GetId(), new List<Post>(new[] { post }));
+                    continue;
+                }
+
+                if (!albums.ContainsKey(post.GetPostAuthor()))
+                {
+                    albums.Add(post.GetPostAuthor(), new List<Post>(new[] { post }));
+                }
+                else
+                { 
+                    if(albums[post.GetPostAuthor()].Count < 10)
+                    {
+                        albums[post.GetPostAuthor()].Add(post);
+                    }
+                    else
+                    {
+                        string altAuthorname = string.Concat(post.GetPostAuthor(), "*");
+                        if (!albums.ContainsKey(altAuthorname))
+                        {
+                            albums.Add(altAuthorname, new List<Post>(new[] { post }));
+                        }
+                        else
+                        {
+                                albums[altAuthorname].Add(post);
+                        }
+                    }                    
+                }               
+            }
+
+            return albums;
+
+        }
+
         static async void SendImagesToChannel(List<Post> storage)
         {
             if (storage.Count == 0 || storage == null) return;
             Console.WriteLine($"(!) {DateTime.UtcNow}:Sending to channel {ChatId}");
             List<Task<Telegram.Bot.Types.Message>> taskList = new List<Task<Telegram.Bot.Types.Message>>();
-            foreach (var post in storage)
+            
+            var albums = GetAlbums(storage);
+            foreach (var album in albums)
             {
-                if (post.GetTags().Contains("#yaoi") || post.GetTags().Contains("#male_focus")) continue; //Yaoi for gays, oh wait...
+                var mediaList = new List<Telegram.Bot.Types.InputMediaBase>();
+                if (album.Value.Count > 1)
+                {    
+                    //Собираем альбом
+                    foreach(var postInAlbum in album.Value)
+                    {
+                        var media = new Telegram.Bot.Types.InputMediaPhoto
+                        {
+                            Media = new Telegram.Bot.Types.InputMediaType(postInAlbum.GetFileUrl()),
+                            Caption = postInAlbum.GetTags(10)
+                        };
+                        mediaList.Add(media);
+                    }
 
+                    //Отправляем альбом
+                    try
+                    {
+                        await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
+                    }
+                    catch(Exception e)
+                    {
+                        Console.WriteLine($"(!!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
+                    }                 
+                    continue;
+                }
+
+                Post post = album.Value[0];
                 var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
                                     {
                                     new InlineKeyboardUrlButton("Post", post.GetPostLink())
@@ -159,7 +246,7 @@ namespace GelbooruChannelBot
                     if (post.GetFileUrl().Contains(".webm"))
                     {
                         Console.WriteLine($"(!) {DateTime.UtcNow}:Send WebM {post.GetPostLink()}");
-                        await Bot.SendTextMessageAsync(ChatId, $"💓<a href=\"{post.GetPostLink()}\">WebM Link</a>💓\n{post.GetTags(10)}",parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{post.GetTags(10)}",parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
                         continue;
                     }
                     //gif отправляем как документ
