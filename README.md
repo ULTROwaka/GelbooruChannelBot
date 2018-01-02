@@ -1,0 +1,1 @@
+# HTML::Pipeline [![pipeline status](http://gitlab.wowsuchdomain.me/default-group/GelbooruChannelBot/badges/master/pipeline.svg)](http://gitlab.wowsuchdomain.me/default-group/GelbooruChannelBot/commits/master)
