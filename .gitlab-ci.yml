@@ -3,8 +3,6 @@ stages:
   - deploy
   
 job1_build:
- artifacts:
-   untracked: true
  image: microsoft/dotnet:latest
  stage: build
  script:
