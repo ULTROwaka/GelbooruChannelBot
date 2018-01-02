@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Reflection;
-using System.Resources;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,7 +66,7 @@ namespace GelbooruChannelBot
             }
 
             Bot.Timeout = new TimeSpan(0, 0, 15);
-            new Thread(() =>
+            var thread = new Thread(() =>
             {
                 Console.WriteLine($"(!) {DateTime.UtcNow}: Thread Created");
                 while (true)
@@ -94,10 +92,10 @@ namespace GelbooruChannelBot
 
                     Thread.Sleep(WaitTime);
                 }
-
-            }).Start();
-
+            });
+            thread.Start();
             Console.ReadLine();
+            thread.Abort();
         }
 
 
@@ -124,7 +122,7 @@ namespace GelbooruChannelBot
             catch(Exception e)//На случай отсутствия подключения к интернету
             {
                 Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
-                return null;
+                return newPosts;
             }
             bool firstTry = false;
             if(storage.Count == 0) firstTry = true;
@@ -158,7 +156,8 @@ namespace GelbooruChannelBot
 
         static async void SendImagesToChannel(List<Post> storage)
         {
-            if (storage.Count == 0 || storage == null) return;
+            if (storage == null) return;
+            if (storage.Count == 0) return;
             Console.WriteLine($"{DateTime.UtcNow}:Sending to channel {ChatId}");
             List<Task<Telegram.Bot.Types.Message>> taskList = new List<Task<Telegram.Bot.Types.Message>>();
             foreach (var post in storage)
