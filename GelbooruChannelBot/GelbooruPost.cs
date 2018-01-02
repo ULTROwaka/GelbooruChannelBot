@@ -93,5 +93,9 @@ namespace GelbooruChannelBot
             return String.Join(' ', tags);
         }
 
+        public override string GetSampleUrl()
+        {
+            return FileUrl;
+        }
     }
 }

@@ -187,11 +187,20 @@ namespace GelbooruChannelBot
                     }
                     //jpeg, png и все остальное отправляем как фото
                     Console.WriteLine($"{DateTime.UtcNow}:Send Pic {post.GetFileUrl()}");
-                    await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                    try
+                    {
+                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                    }
+                    catch(Exception)
+                    {
+                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        throw;
+                    }
+                    
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})");
+                    Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
                 }
             }
 
