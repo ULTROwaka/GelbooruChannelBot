@@ -37,8 +37,9 @@ namespace GelbooruChannelBot
                 AnounceBot = new TelegramBotClient(Environment.GetEnvironmentVariable("ANNOUNCE_CHANNEL_BOT_TOKEN"));
                 AnounceChatId = long.Parse(Environment.GetEnvironmentVariable("ANNOUNCE_CHANNEL_CHAT_ID"));
             }
-            catch
+            catch (Exception e)
             {
+                Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
                 AnounceBot = null;
                 AnounceChatId = 0;
             }
@@ -61,8 +62,8 @@ namespace GelbooruChannelBot
             if (AnounceBot != null && AnounceChatId != 0)
             {
                 AnounceBot.SendTextMessageAsync(AnounceChatId, $"{Instance} Start \n" +
-                    $"CHANNEL_BOT_TOKEN: {Environment.GetEnvironmentVariable("CHANNEL_BOT_TOKEN")}" +
-                    $"CHANNEL_CHAT_ID: {Environment.GetEnvironmentVariable("CHANNEL_CHAT_ID")}" +
+                    $"CHANNEL_BOT_TOKEN: {Environment.GetEnvironmentVariable("CHANNEL_BOT_TOKEN")}\n" +
+                    $"CHANNEL_CHAT_ID: {Environment.GetEnvironmentVariable("CHANNEL_CHAT_ID")}\n" +
                     $"CHANNEL_REQUEST_URL: {Environment.GetEnvironmentVariable("CHANNEL_REQUEST_URL")}");
             }
 
