@@ -44,6 +44,7 @@ namespace GelbooruChannelBot
         abstract public string GetId();
         abstract public string GetTags();
         abstract public string GetFileUrl();
+        abstract public string GetSampleUrl();
         abstract public string GetHash();
         abstract public string GetTags(int count);
         abstract public string GetPostLink();

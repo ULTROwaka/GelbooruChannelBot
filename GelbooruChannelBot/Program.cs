@@ -106,9 +106,14 @@ namespace GelbooruChannelBot
 
         static List<Post> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : Post
         {
+
+            bool firstTry = false;
+            #if RELEASE
+            if (storage.Count == 0) firstTry = true;
+            #endif
+
             List<Post> newPosts = new List<Post>();
             url = url.Replace("*limit*", $"limit={count}");
-
             Console.WriteLine($"{DateTime.UtcNow}: Request {url}");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Timeout = 15000;
@@ -124,8 +129,7 @@ namespace GelbooruChannelBot
                 Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
                 return newPosts;
             }
-            bool firstTry = false;
-            if(storage.Count == 0) firstTry = true;
+
             //Сериализуем полученные данные
             using (var reader = new StreamReader(resp.GetResponseStream()))
             {
@@ -140,8 +144,7 @@ namespace GelbooruChannelBot
                         if (!firstTry)
                         {
                             newPosts.Add(post);
-                        }
-                        
+                        }                      
                     }
                 }
                 Console.WriteLine($"(!) {DateTime.UtcNow}:New posts count {newPosts.Count}");
@@ -158,52 +161,69 @@ namespace GelbooruChannelBot
         {
             if (storage == null) return;
             if (storage.Count == 0) return;
+
             Console.WriteLine($"{DateTime.UtcNow}:Sending to channel {ChatId}");
-            List<Task<Telegram.Bot.Types.Message>> taskList = new List<Task<Telegram.Bot.Types.Message>>();
+
             foreach (var post in storage)
             {                
-
                 var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
                                     {
                                     new InlineKeyboardUrlButton("Post", post.GetPostLink())
                                     });
-                try
+
+                string tags = post.GetTags(15);
+#region WebM send
+                //webm отправляем как ссылку
+                if (post.GetFileUrl().Contains(".webm"))
                 {
-                    string tags = post.GetTags(15);
-                    //webm отправляем как ссылку
-                    var str = post.GetFileUrl();
-                    if (post.GetFileUrl().Contains(".webm"))
+                    try
                     {
                         Console.WriteLine($"{DateTime.UtcNow}:Send WebM {post.GetPostLink()}");
-                        await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{post.GetTags(10)}",parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
-                        continue;
+                        await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{tags}", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
                     }
-                    //gif отправляем как документ
-                    if (post.GetFileUrl().Contains(".gif"))
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
+                    }
+                }
+#endregion
+#region Gif send
+                //gif отправляем как документ
+                if (post.GetFileUrl().Contains(".gif"))
+                {
+                    try
                     {
                         Console.WriteLine($"{DateTime.UtcNow}:Send Gif {post.GetFileUrl()}");
                         await Bot.SendDocumentAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
-                        continue;
                     }
-                    //jpeg, png и все остальное отправляем как фото
-                    Console.WriteLine($"{DateTime.UtcNow}:Send Pic {post.GetFileUrl()}");
-                    try
+                    catch(Exception e)
                     {
-                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
                     }
-                    catch(Exception)
-                    {
-                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
-                        throw;
-                    }
-                    
                 }
-                catch (Exception e)
+#endregion
+#region Pic send
+                //jpeg, png и все остальное отправляем как фото                  
+                try
+                {
+                    Console.WriteLine($"{DateTime.UtcNow}:Send Pic {post.GetFileUrl()}");
+                    await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                }
+                catch(Exception e) //Переотправляем файл с меньшим размером
                 {
                     Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
+                    Console.WriteLine($"\tResend Pic {post.GetSampleUrl()}");
+                    try
+                    {
+                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                    }
+                    catch
+                    {
+                        Console.WriteLine($"\t(!) Fail resend Pic {post.GetSampleUrl()}");
+                    }               
                 }
+#endregion
             }
-
         }
     }
 }
