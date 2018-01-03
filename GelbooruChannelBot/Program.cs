@@ -185,6 +185,7 @@ namespace GelbooruChannelBot
                     {
                         Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
                     }
+                    continue;
                 }
 #endregion
 #region Gif send
@@ -200,6 +201,7 @@ namespace GelbooruChannelBot
                     {
                         Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
                     }
+                    continue;
                 }
 #endregion
 #region Pic send
