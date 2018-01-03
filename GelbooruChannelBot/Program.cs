@@ -53,7 +53,7 @@ namespace GelbooruChannelBot
                 Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
             }
 
-            Console.WriteLine($"(!) {DateTime.UtcNow}: {Url}");
+            Console.WriteLine($"{DateTime.UtcNow}: {Url}");
             if (Url.Contains("gelbooru")) Instance = "Gelbooru";
             else if (Url.Contains("yande.re")) Instance = "Yandere";
 
@@ -68,12 +68,12 @@ namespace GelbooruChannelBot
             Bot.Timeout = new TimeSpan(0, 0, 15);
             var thread = new Thread(() =>
             {
-                Console.WriteLine($"(!) {DateTime.UtcNow}: Thread Created");
+                Console.WriteLine($"{DateTime.UtcNow}: Thread Created");
                 while (true)
                 {
                     try
                     {
-                        Console.WriteLine($"(!) {DateTime.UtcNow}:Try URL {Url}");
+                        Console.WriteLine($"{DateTime.UtcNow}:Try URL {Url}");
                         switch (Instance)
                         {
                             case "Gelbooru":
@@ -95,7 +95,7 @@ namespace GelbooruChannelBot
             });
             thread.Start();
             Console.ReadLine();
-            Console.WriteLine($"(!) {DateTime.UtcNow}: {Instance} Stop");
+            Console.WriteLine($"{DateTime.UtcNow}: {Instance} Stop");
         }
 
 
@@ -116,7 +116,7 @@ namespace GelbooruChannelBot
             url = url.Replace("*limit*", $"limit={count}");
             Console.WriteLine($"{DateTime.UtcNow}: Request {url}");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            request.Timeout = 15000;
+            request.Timeout = 25000;
             HttpWebResponse resp;
 
             //Делаем запрос на получение Json данных постов
@@ -126,7 +126,7 @@ namespace GelbooruChannelBot
             }
             catch(Exception e)//На случай отсутствия подключения к интернету
             {
-                Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
+                Console.WriteLine($"{DateTime.UtcNow}: {e.Source}:::{e.Message}");
                 return newPosts;
             }
 
@@ -147,7 +147,7 @@ namespace GelbooruChannelBot
                         }                      
                     }
                 }
-                Console.WriteLine($"(!) {DateTime.UtcNow}:New posts count {newPosts.Count}");
+                Console.WriteLine($"{DateTime.UtcNow}:New posts count {newPosts.Count}");
             }
 
             //Триммируем список старых постов (память не резиновая)
@@ -183,7 +183,7 @@ namespace GelbooruChannelBot
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
+                        Console.WriteLine($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
                     }
                     continue;
                 }
@@ -199,7 +199,7 @@ namespace GelbooruChannelBot
                     }
                     catch(Exception e)
                     {
-                        Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
+                        Console.WriteLine($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
                     }
                     continue;
                 }
@@ -213,11 +213,11 @@ namespace GelbooruChannelBot
                 }
                 catch(Exception e) //Переотправляем файл с меньшим размером
                 {
-                    Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
+                    Console.WriteLine($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
                     Console.WriteLine($"\tResend Pic {post.GetSampleUrl()}");
                     try
                     {
-                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true, cancellationToken: new CancellationToken());
                     }
                     catch
                     {
