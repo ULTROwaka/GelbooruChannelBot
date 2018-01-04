@@ -112,7 +112,7 @@ namespace GelbooruChannelBot
 
         public override string GetFileUrl()
         {
-            return JpegUrl;
+            return FileUrl;
         }
 
         public override string GetHash()
@@ -153,6 +153,11 @@ namespace GelbooruChannelBot
         public override string GetSampleUrl()
         {
             return SampleUrl;
+        }
+
+        public override long GetFileSize()
+        {
+            return FileSize;
         }
     }
 }

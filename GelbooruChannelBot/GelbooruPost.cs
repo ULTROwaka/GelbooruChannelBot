@@ -97,5 +97,10 @@ namespace GelbooruChannelBot
         {
             return FileUrl;
         }
+
+        public override long GetFileSize()
+        {
+            return 6000000;
+        }
     }
 }

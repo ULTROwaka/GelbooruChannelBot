@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -37,7 +38,7 @@ namespace GelbooruChannelBot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
+                LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
                 AnounceBot = null;
                 AnounceChatId = 0;
             }
@@ -50,7 +51,7 @@ namespace GelbooruChannelBot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
+                LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
             }
 
             Console.WriteLine($"{DateTime.UtcNow}: {Url}");
@@ -65,7 +66,7 @@ namespace GelbooruChannelBot
                     $"CHANNEL_REQUEST_URL: {Environment.GetEnvironmentVariable("CHANNEL_REQUEST_URL")}");
             }
 
-            Bot.Timeout = new TimeSpan(0, 0, 15);
+            Bot.Timeout = new TimeSpan(0, 0, 30);
             var thread = new Thread(() =>
             {
                 Console.WriteLine($"{DateTime.UtcNow}: Thread Created");
@@ -87,7 +88,7 @@ namespace GelbooruChannelBot
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Message}");
+                        LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
                     }
 
                     Thread.Sleep(WaitTime);
@@ -126,7 +127,7 @@ namespace GelbooruChannelBot
             }
             catch(Exception e)//На случай отсутствия подключения к интернету
             {
-                Console.WriteLine($"{DateTime.UtcNow}: {e.Source}:::{e.Message}");
+                LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
                 return newPosts;
             }
 
@@ -172,59 +173,96 @@ namespace GelbooruChannelBot
                                     });
 
                 string tags = post.GetTags(15);
-#region WebM send
+                #region WebM send
                 //webm отправляем как ссылку
                 if (post.GetFileUrl().Contains(".webm"))
                 {
                     try
                     {
-                        Console.WriteLine($"{DateTime.UtcNow}:Send WebM {post.GetPostLink()}");
+                        LogWrite($"{DateTime.UtcNow}:Send WebM {post.GetPostLink()}", ConsoleColor.Yellow);
                         await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{tags}", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
+                        LogWrite($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message} " +
+                            $"(url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})",
+                            ConsoleColor.Red, 1);
                     }
                     continue;
                 }
-#endregion
-#region Gif send
+                #endregion
+                #region Gif send
                 //gif отправляем как документ
                 if (post.GetFileUrl().Contains(".gif"))
                 {
                     try
                     {
-                        Console.WriteLine($"{DateTime.UtcNow}:Send Gif {post.GetFileUrl()}");
-                        await Bot.SendDocumentAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:Send Gif {post.GetFileUrl()}", ConsoleColor.Yellow);
+                        await Bot.SendDocumentAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetFileUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
                     }
                     catch(Exception e)
                     {
-                        Console.WriteLine($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
+                       LogWrite($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message}" +
+                            $" (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})",
+                            ConsoleColor.Red, 1);
                     }
                     continue;
                 }
-#endregion
-#region Pic send
-                //jpeg, png и все остальное отправляем как фото                  
+                #endregion
+                #region Pic send
+                //jpeg, png и все остальное отправляем как фото
                 try
                 {
-                    Console.WriteLine($"{DateTime.UtcNow}:Send Pic {post.GetFileUrl()}");
-                    await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                    long fileSize = post.GetFileSize();
+                    if (fileSize < 5000000) //5Mb
+                    {
+
+                        LogWrite($"{DateTime.UtcNow}:Send pic {post.GetId()}\nUrl: {post.GetFileUrl()}", ConsoleColor.Yellow);
+                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetFileUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:Pic sended {post.GetId()}",ConsoleColor.Green);
+                    }
+                    else
+                    {
+                        LogWrite($"{DateTime.UtcNow}:Send pic (sample) {post.GetId()}\nUrl: {post.GetFileUrl()}", ConsoleColor.Yellow);
+                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetSampleUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:Pic sended (sample) {post.GetId()}", ConsoleColor.Green);
+                    }
                 }
-                catch(Exception e) //Переотправляем файл с меньшим размером
+                catch(Exception e)
                 {
-                    Console.WriteLine($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message} (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})");
-                    Console.WriteLine($"\tResend Pic {post.GetSampleUrl()}");
+                    LogWrite($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message}" +
+                        $" (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})",
+                        ConsoleColor.Red, 1);
                     try
                     {
-                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true, cancellationToken: new CancellationToken());
+                        LogWrite($"Resend pic(sample) {post.GetId()}\nUrl: {post.GetFileUrl()}", ConsoleColor.DarkYellow, 1);
+                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetSampleUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:Pic resended {post.GetId()}", ConsoleColor.DarkGreen, 1);
                     }
                     catch
                     {
-                        Console.WriteLine($"\t(!) Fail resend Pic {post.GetSampleUrl()}");
-                    }               
-                }
-#endregion
+                        LogWrite($"{DateTime.UtcNow}:Resend fail {post.GetId()}", ConsoleColor.DarkRed, 1);
+                    }
+                   
+                }             
+                #endregion
+            }
+        }
+        delegate void Writer(string text);
+        private static void LogWrite(string text, ConsoleColor color = ConsoleColor.White, int level = 0, Writer writer = null)
+        {
+            StringBuilder builder = new StringBuilder(text);
+            builder.Append("\t", 0, level);
+            
+            if(writer != null)
+            {
+                writer(builder.ToString());
+            }
+            else
+            {
+                Console.ForegroundColor = color;
+                Console.WriteLine(builder.ToString());
+                Console.ResetColor();
             }
         }
     }
