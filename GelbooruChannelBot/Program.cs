@@ -106,7 +106,7 @@ namespace GelbooruChannelBot
             return true;
         }
 
-        static List<Post> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : Post
+        static List<PostBase> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : PostBase
         {
 
             bool firstTry = false;
@@ -114,7 +114,7 @@ namespace GelbooruChannelBot
             if (storage.Count == 0) firstTry = true;
             #endif
 
-            List<Post> newPosts = new List<Post>();
+            List<PostBase> newPosts = new List<PostBase>();
             url = url.Replace("*limit*", $"limit={count}");
             Console.WriteLine($"{DateTime.UtcNow}: Request {url}");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
@@ -159,7 +159,7 @@ namespace GelbooruChannelBot
             return newPosts;
         }
 
-        static async void SendImagesToChannel(List<Post> storage)
+        static async void SendImagesToChannel(List<PostBase> storage)
         {
             if (storage == null) return;
             if (storage.Count == 0) return;

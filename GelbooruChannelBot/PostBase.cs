@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace GelbooruChannelBot
 {
-    abstract class Post : IEquatable<Post>
+    abstract class PostBase : IEquatable<PostBase>
     {
         protected List<string> ImportantTags = new List<string> {"#loli", "#futanari", "#3d", "#yuri", "#happy_sex", "#vaginal",
            "#cum_in_pussy", "#cervical_penetration", "#x_ray", "#ahegao", "#animated", "#animated_gif", "#cosplay", "#looking_at_viewer",
@@ -51,6 +51,6 @@ namespace GelbooruChannelBot
         abstract public long GetOriginalSize();
         abstract public long GetSampleSize();
 
-        abstract public bool Equals(Post other);
+        abstract public bool Equals(PostBase other);
     }
 }

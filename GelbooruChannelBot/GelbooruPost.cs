@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace GelbooruChannelBot
 {
-    class GelbooruPost : Post
+    class GelbooruPost : PostBase
     {
         [JsonProperty("directory")]
         public string Directory { get; set; }
@@ -48,7 +48,7 @@ namespace GelbooruChannelBot
         [JsonProperty("file_url")]
         public string FileUrl { get; set; } 
 
-        public override bool Equals(Post other)
+        public override bool Equals(PostBase other)
         {
             return Hash.Equals(other.GetHash());
         }
