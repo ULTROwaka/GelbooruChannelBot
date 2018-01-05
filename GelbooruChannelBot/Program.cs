@@ -161,47 +161,6 @@ namespace GelbooruChannelBot
             return newPosts;
         }
 
-        static Dictionary<string, List<PostBase>> GetAlbums(List<PostBase> storage)
-        {
-            var albums = new Dictionary<string, List<PostBase>>();
-
-            foreach (var post in storage)
-            {
-                if (post.GetFileUrl().Contains(".webm") || post.GetFileUrl().Contains(".gif"))
-                {
-                    albums.Add(post.GetId(), new List<PostBase>(new[] { post }));
-                    continue;
-                }
-
-                if (!albums.ContainsKey(post.GetPostAuthor()))
-                {
-                    albums.Add(post.GetPostAuthor(), new List<PostBase>(new[] { post }));
-                }
-                else
-                {
-                    if (albums[post.GetPostAuthor()].Count < 10)
-                    {
-                        albums[post.GetPostAuthor()].Add(post);
-                    }
-                    else
-                    {
-                        string altAuthorname = string.Concat(post.GetPostAuthor(), "*");
-                        if (!albums.ContainsKey(altAuthorname))
-                        {
-                            albums.Add(altAuthorname, new List<PostBase>(new[] { post }));
-                        }
-                        else
-                        {
-                            albums[altAuthorname].Add(post);
-                        }
-                    }
-                }
-            }
-
-            return albums;
-
-        }
-
         static async void SendImagesToChannel(List<PostBase> storage)
         {
             if (storage == null) return;
@@ -451,7 +410,7 @@ namespace GelbooruChannelBot
             LogWrite($"Size: {post.GetSampleSize()}Byte", level: 1);
         }
 
-        private static Dictionary<string, List<PostBase>> CompileAlbums(IEnumerable<PostBase> posts, int tagsCompareCount = 30, int equalityLevel = 2)
+        private static Dictionary<string, List<PostBase>> CompilePacks(IEnumerable<PostBase> posts, int tagsCompareCount = 30, int equalityLevel = 2)
         {
             var albums = new Dictionary<string, Dictionary<string, List<PostBase>>>();
             foreach (PostBase post in posts)
