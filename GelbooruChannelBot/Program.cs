@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Resources;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -37,8 +38,9 @@ namespace GelbooruChannelBot
                 AnounceBot = new TelegramBotClient(Environment.GetEnvironmentVariable("ANNOUNCE_CHANNEL_BOT_TOKEN"));
                 AnounceChatId = long.Parse(Environment.GetEnvironmentVariable("ANNOUNCE_CHANNEL_CHAT_ID"));
             }
-            catch
+            catch (Exception e)
             {
+                LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
                 AnounceBot = null;
                 AnounceChatId = 0;
             }
@@ -51,54 +53,55 @@ namespace GelbooruChannelBot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
+                LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
             }
 
-            Console.WriteLine($"(!) {DateTime.UtcNow}: {Url}");
+            Console.WriteLine($"{DateTime.UtcNow}: {Url}");
             if (Url.Contains("gelbooru")) Instance = "Gelbooru";
             else if (Url.Contains("yande.re")) Instance = "Yandere";
 
-            if (AnounceBot!=null && AnounceChatId != 0)
+            if (AnounceBot != null && AnounceChatId != 0)
             {
                 AnounceBot.SendTextMessageAsync(AnounceChatId, $"{Instance} Start \n" +
-                    $"CHANNEL_BOT_TOKEN: {Environment.GetEnvironmentVariable("CHANNEL_BOT_TOKEN")}" +
-                    $"CHANNEL_CHAT_ID: {Environment.GetEnvironmentVariable("CHANNEL_CHAT_ID")}" +
+                    $"CHANNEL_BOT_TOKEN: {Environment.GetEnvironmentVariable("CHANNEL_BOT_TOKEN")}\n" +
+                    $"CHANNEL_CHAT_ID: {Environment.GetEnvironmentVariable("CHANNEL_CHAT_ID")}\n" +
                     $"CHANNEL_REQUEST_URL: {Environment.GetEnvironmentVariable("CHANNEL_REQUEST_URL")}");
             }
-           
-            Bot.Timeout = new TimeSpan(0, 0, 15);
-            new Thread(() =>
+
+            Bot.Timeout = new TimeSpan(0, 0, 50);
+            var thread = new Thread(() =>
             {
-                Console.WriteLine($"(!) {DateTime.UtcNow}: Thread Created");
+                Console.WriteLine($"{DateTime.UtcNow}: Thread Created");
                 while (true)
                 {
                     try
                     {
-                        Console.WriteLine($"(!) {DateTime.UtcNow}:Try URL {Url}");
-                        if (Url.Contains("gelbooru"))
-                        {                           
-                            SendImagesToChannel(GetNewestPosts<GelbooruPost>(Url, OldPostIdList, PostsPerCheck));
-                        }
-                        else
+                        Console.WriteLine($"{DateTime.UtcNow}:Try URL {Url}");
+                        switch (Instance)
                         {
-                            if (Url.Contains("yande.re"))
-                            {
+                            case "Gelbooru":
+                                SendImagesToChannel(GetNewestPosts<GelbooruPost>(Url, OldPostIdList, PostsPerCheck));
+                                break;
+                            case "Yandere":
                                 SendImagesToChannel(GetNewestPosts<YanderePost>(Url, OldPostIdList, PostsPerCheck));
-                            }
+                                break;
+                            default: Console.WriteLine($"(!) {DateTime.UtcNow}: {Instance} can`t start"); break;
                         }
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
-                        Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Message}");
+                        LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
                     }
-                    
+
                     Thread.Sleep(WaitTime);
+                    LogWrite($"Wiat {WaitTime}");
                 }
-
-            }).Start();
-
+            });
+            thread.Start();
             Console.ReadLine();
+            Console.WriteLine($"{DateTime.UtcNow}: {Instance} Stop");
         }
+
 
         public static bool RemoteCertValidateCallback(object sender, X509Certificate cert, X509Chain chain, System.Net.Security.SslPolicyErrors error)
         {
@@ -107,15 +110,17 @@ namespace GelbooruChannelBot
 
         static List<Post> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : Post
         {
+
             bool firstTry = false;
+            #if RELEASE
             if (storage.Count == 0) firstTry = true;
+            #endif
 
             List<Post> newPosts = new List<Post>();
             url = url.Replace("*limit*", $"limit={count}");
-
-            Console.WriteLine($"(!) {DateTime.UtcNow}: Request {url}");
+            Console.WriteLine($"{DateTime.UtcNow}: Request {url}");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            request.Timeout = 15000;
+            request.Timeout = 25000;
             HttpWebResponse resp;
 
             //Делаем запрос на получение Json данных постов
@@ -125,8 +130,8 @@ namespace GelbooruChannelBot
             }
             catch(Exception e)//На случай отсутствия подключения к интернету
             {
-                Console.WriteLine($"{DateTime.UtcNow}: {e.Source}:::{e.Message}");
-                return null;
+                LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
+                return newPosts;
             }
 
             //Сериализуем полученные данные
@@ -143,11 +148,10 @@ namespace GelbooruChannelBot
                         if (!firstTry)
                         {
                             newPosts.Add(post);
-                        }
-                        
+                        }                      
                     }
                 }
-                Console.WriteLine($"(!) {DateTime.UtcNow}:New posts count {newPosts.Count}");
+                Console.WriteLine($"{DateTime.UtcNow}:New posts count {newPosts.Count}");
             }
 
             //Триммируем список старых постов (память не резиновая)
@@ -200,72 +204,119 @@ namespace GelbooruChannelBot
 
         static async void SendImagesToChannel(List<Post> storage)
         {
-            if (storage.Count == 0 || storage == null) return;
-            Console.WriteLine($"(!) {DateTime.UtcNow}:Sending to channel {ChatId}");
-            List<Task<Telegram.Bot.Types.Message>> taskList = new List<Task<Telegram.Bot.Types.Message>>();
-            
-            var albums = GetAlbums(storage);
-            foreach (var album in albums)
+            if (storage == null) return;
+            if (storage.Count == 0) return;
+
+            Console.WriteLine($"{DateTime.UtcNow}:Sending to channel {ChatId}");
+
+            foreach (var post in storage)
             {
-                var mediaList = new List<Telegram.Bot.Types.InputMediaBase>();
-                if (album.Value.Count > 1)
-                {    
-                    //Собираем альбом
-                    foreach(var postInAlbum in album.Value)
-                    {
-                        var media = new Telegram.Bot.Types.InputMediaPhoto
-                        {
-                            Media = new Telegram.Bot.Types.InputMediaType(postInAlbum.GetFileUrl()),
-                            Caption = postInAlbum.GetTags(10)
-                        };
-                        mediaList.Add(media);
-                    }
+                LogWrite($"{DateTime.UtcNow}:Orginal {post.GetFileUrl()}");
+                LogWrite($"Id: {post.GetId()}", level: 1);
+                LogWrite($"Size: {post.GetOriginalSize()}Byte", level: 1);
 
-                    //Отправляем альбом
-                    try
-                    {
-                        await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
-                    }
-                    catch(Exception e)
-                    {
-                        Console.WriteLine($"(!!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
-                    }                 
-                    continue;
-                }
-
-                Post post = album.Value[0];
+                LogWrite($"{DateTime.UtcNow}:Sample {post.GetSampleUrl()}");
+                LogWrite($"Id: {post.GetId()}", level: 1);
+                LogWrite($"Size: {post.GetSampleSize()}Byte", level: 1);
                 var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
                                     {
                                     new InlineKeyboardUrlButton("Post", post.GetPostLink())
                                     });
+
+                string tags = post.GetTags(15);
+                #region WebM send
+                //webm отправляем как ссылку
+                if (post.GetFileUrl().Contains(".webm"))
+                {
+                    try
+                    {
+                        LogWrite($"{DateTime.UtcNow}:Send WebM {post.GetId()}", ConsoleColor.Yellow);
+                        await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{tags}", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:WebM sended {post.GetId()}", ConsoleColor.Green);
+                    }
+                    catch (Exception e)
+                    {
+                        LogWrite($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message} " +
+                            $"(url: {post.GetFileUrl()})\n\t (url: {post.GetSampleUrl()})",
+                            ConsoleColor.Red, 1);
+                    }
+                    continue;
+                }
+                #endregion
+                #region Gif send
+                //gif отправляем как документ
+                if (post.GetFileUrl().Contains(".gif"))
+                {
+                    try
+                    {
+                        LogWrite($"{DateTime.UtcNow}:Send gif {post.GetId()}", ConsoleColor.Yellow);
+                        await Bot.SendDocumentAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetFileUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:Gif sended  {post.GetId()}", ConsoleColor.Green);
+                    }
+                    catch(Exception e)
+                    {
+                       LogWrite($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message}" +
+                            $" (url: {post.GetFileUrl()})\n\t(url: {post.GetSampleUrl()})",
+                            ConsoleColor.Red, 1);
+                    }
+                    continue;
+                }
+                #endregion
+                #region Pic send
+                //jpeg, png и все остальное отправляем как фото
                 try
                 {
-                    string tags = post.GetTags(15);
-                    //webm отправляем как ссылку
-                    var str = post.GetFileUrl();
-                    if (post.GetFileUrl().Contains(".webm"))
+                    long fileSize = post.GetOriginalSize();
+                    if (fileSize < 5000000) //5Mb
                     {
-                        Console.WriteLine($"(!) {DateTime.UtcNow}:Send WebM {post.GetPostLink()}");
-                        await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{post.GetTags(10)}",parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
-                        continue;
-                    }
-                    //gif отправляем как документ
-                    if (post.GetFileUrl().Contains(".gif"))
-                    {
-                        Console.WriteLine($"(!) {DateTime.UtcNow}:Send Gif {post.GetFileUrl()}");
-                        await Bot.SendDocumentAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
-                        continue;
-                    }
-                    //jpeg, png и все остальное отправляем как фото
-                    Console.WriteLine($"(!) {DateTime.UtcNow}:Send Pic {post.GetFileUrl()}");
-                    await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"{DateTime.UtcNow}: {e.Source}:::{e.Message} (url: {post.GetFileUrl()})");
-                }
-            }
 
+                        LogWrite($"{DateTime.UtcNow}:Send pic {post.GetId()}", ConsoleColor.Yellow);
+                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetFileUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:Pic sended {post.GetId()}",ConsoleColor.Green);
+                    }
+                    else
+                    {
+                        LogWrite($"{DateTime.UtcNow}:Send pic (sample) {post.GetId()}", ConsoleColor.Yellow);
+                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetSampleUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:Pic sended (sample) {post.GetId()}", ConsoleColor.Green);
+                    }
+                }
+                catch(Exception e)
+                {
+                    LogWrite($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message}" +
+                        $" (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})",
+                        ConsoleColor.Red, 1);
+                    try
+                    {
+                        LogWrite($"Resend pic(sample) {post.GetId()}\nUrl: {post.GetFileUrl()}", ConsoleColor.DarkYellow, 1);
+                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetSampleUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:Pic resended {post.GetId()}", ConsoleColor.DarkGreen, 1);
+                    }
+                    catch
+                    {
+                        LogWrite($"{DateTime.UtcNow}:Resend fail {post.GetId()}", ConsoleColor.DarkRed, 1);
+                    }
+                   
+                }             
+                #endregion
+            }
+        }
+        delegate void Writer(string text);
+        private static void LogWrite(string text, ConsoleColor color = ConsoleColor.Gray, int level = 0, Writer writer = null)
+        {
+            StringBuilder builder = new StringBuilder("");
+            builder.Append("\t", 0, level);
+            builder.Append(text);
+            if (writer != null)
+            {
+                writer(builder.ToString());
+            }
+            else
+            {
+                Console.ForegroundColor = color;
+                Console.WriteLine(builder.ToString());
+                Console.ResetColor();
+            }
         }
     }
 }

@@ -27,9 +27,9 @@ namespace GelbooruChannelBot
         [JsonProperty("updated_at")]
         public long UpdatedAt { get; set; }
         [JsonProperty("creator_id")]
-        public long CreatorId { get; set; }
+        public string CreatorId { get; set; }
         [JsonProperty("approver_id")]
-        public object ApproverId { get; set; }
+        public string ApproverId { get; set; }
         [JsonProperty("author")]
         public string Author { get; set; } 
         [JsonProperty("change")]
@@ -114,7 +114,7 @@ namespace GelbooruChannelBot
 
         public override string GetFileUrl()
         {
-            return JpegUrl;
+            return FileUrl;
         }
 
         public override string GetHash()
@@ -150,6 +150,21 @@ namespace GelbooruChannelBot
                 }
             }
             return String.Join(' ', tags);
+        }
+
+        public override string GetSampleUrl()
+        {
+            return SampleUrl;
+        }
+
+        public override long GetOriginalSize()
+        {
+            return FileSize;
+        }
+
+        public override long GetSampleSize()
+        {
+            return SampleFileSize;
         }
 
         public override string GetPostAuthor()

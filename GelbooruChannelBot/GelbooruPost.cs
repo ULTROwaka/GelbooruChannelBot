@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace GelbooruChannelBot
 {
@@ -94,6 +93,20 @@ namespace GelbooruChannelBot
             return String.Join(' ', tags);
         }
 
+        public override string GetSampleUrl()
+        {
+            return FileUrl;
+        }
+
+        public override long GetOriginalSize()
+        {
+            return 0;
+        }
+
+        public override long GetSampleSize()
+        {
+            return 0;
+        }
         public override string GetPostAuthor()
         {
             return Owner;

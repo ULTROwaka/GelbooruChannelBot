@@ -3,8 +3,6 @@ stages:
   - deploy
   
 job1_build:
- artifacts:
-   untracked: true
  image: microsoft/dotnet:latest
  stage: build
  script:
@@ -16,7 +14,7 @@ job1_build:
 
 deploy_yandere:
  variables:
-    ANNOUNCE_CHANNEL_BOT_TOKEN: $538325910:AAG1R-rlRyyd1twkC7byIe-0xyJlHR633Ws
+    ANNOUNCE_CHANNEL_BOT_TOKEN: $ANNOUNCE_CHANNEL_TELEGRAM_BOT_TOKEN
     ANNOUNCE_CHANNEL_CHAT_ID: $ANNOUNCE_CHANNEL_CHAT_ID
     CHANNEL_BOT_TOKEN: $YANDERE_CHANNEL_TELEGRAM_BOT_TOKEN
     CHANNEL_CHAT_ID: $YANDERE_CHANNEL_CHAT_ID
@@ -28,7 +26,7 @@ deploy_yandere:
  script:
   - 'docker build -t yandere-channel-bot .'
   - 'docker stop yandere-channel-bot || true && docker rm yandere-channel-bot || true'
-  - 'docker run --restart=always --name yandere-channel-bot -d -e CHANNEL_BOT_TOKEN -e CHANNEL_CHAT_ID -e CHANNEL_REQUEST_URL yandere-channel-bot'
+  - 'docker run --restart=always --name yandere-channel-bot -d -e CHANNEL_BOT_TOKEN -e CHANNEL_CHAT_ID -e CHANNEL_REQUEST_URL -e ANNOUNCE_CHANNEL_BOT_TOKEN -e ANNOUNCE_CHANNEL_CHAT_ID yandere-channel-bot'
  environment:
     name: Yande.re
  only:
@@ -36,7 +34,7 @@ deploy_yandere:
   
 deploy_gelbooru:
  variables:
-    ANNOUNCE_CHANNEL_BOT_TOKEN: $538325910:AAG1R-rlRyyd1twkC7byIe-0xyJlHR633Ws
+    ANNOUNCE_CHANNEL_BOT_TOKEN: $ANNOUNCE_CHANNEL_TELEGRAM_BOT_TOKEN
     ANNOUNCE_CHANNEL_CHAT_ID: $ANNOUNCE_CHANNEL_CHAT_ID
     CHANNEL_BOT_TOKEN: $GELBOORU_CHANNEL_TELEGRAM_BOT_TOKEN
     CHANNEL_CHAT_ID: $GELBOORU_CHANNEL_CHAT_ID
@@ -48,7 +46,7 @@ deploy_gelbooru:
  script:
   - 'docker build -t gelbooruchannelbot .'
   - 'docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true'
-  - 'docker run --restart=always --name gelbooruchannelbot -d -e CHANNEL_BOT_TOKEN -e CHANNEL_CHAT_ID -e CHANNEL_REQUEST_URL gelbooruchannelbot'
+  - 'docker run --restart=always --name gelbooruchannelbot -d -e CHANNEL_BOT_TOKEN -e CHANNEL_CHAT_ID -e CHANNEL_REQUEST_URL  -e ANNOUNCE_CHANNEL_BOT_TOKEN -e ANNOUNCE_CHANNEL_CHAT_ID gelbooruchannelbot'
  environment:
     name: Gelbooru.com
  only:
