@@ -98,9 +98,14 @@ namespace GelbooruChannelBot
             return FileUrl;
         }
 
-        public override long GetFileSize()
+        public override long GetOriginalSize()
         {
-            return 6000000;
+            return 0;
+        }
+
+        public override long GetSampleSize()
+        {
+            return 0;
         }
     }
 }

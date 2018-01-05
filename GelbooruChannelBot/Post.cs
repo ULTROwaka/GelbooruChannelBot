@@ -48,7 +48,8 @@ namespace GelbooruChannelBot
         abstract public string GetHash();
         abstract public string GetTags(int count);
         abstract public string GetPostLink();
-        abstract public long GetFileSize();
+        abstract public long GetOriginalSize();
+        abstract public long GetSampleSize();
 
         abstract public bool Equals(Post other);
     }

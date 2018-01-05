@@ -66,7 +66,7 @@ namespace GelbooruChannelBot
                     $"CHANNEL_REQUEST_URL: {Environment.GetEnvironmentVariable("CHANNEL_REQUEST_URL")}");
             }
 
-            Bot.Timeout = new TimeSpan(0, 0, 30);
+            Bot.Timeout = new TimeSpan(0, 0, 50);
             var thread = new Thread(() =>
             {
                 Console.WriteLine($"{DateTime.UtcNow}: Thread Created");
@@ -92,6 +92,7 @@ namespace GelbooruChannelBot
                     }
 
                     Thread.Sleep(WaitTime);
+                    LogWrite($"Wiat {WaitTime}");
                 }
             });
             thread.Start();
@@ -166,7 +167,14 @@ namespace GelbooruChannelBot
             Console.WriteLine($"{DateTime.UtcNow}:Sending to channel {ChatId}");
 
             foreach (var post in storage)
-            {                
+            {
+                LogWrite($"{DateTime.UtcNow}:Orginal {post.GetFileUrl()}");
+                LogWrite($"Id: {post.GetId()}", level: 1);
+                LogWrite($"Size: {post.GetOriginalSize()}Byte", level: 1);
+
+                LogWrite($"{DateTime.UtcNow}:Sample {post.GetSampleUrl()}");
+                LogWrite($"Id: {post.GetId()}", level: 1);
+                LogWrite($"Size: {post.GetSampleSize()}Byte", level: 1);
                 var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
                                     {
                                     new InlineKeyboardUrlButton("Post", post.GetPostLink())
@@ -179,13 +187,14 @@ namespace GelbooruChannelBot
                 {
                     try
                     {
-                        LogWrite($"{DateTime.UtcNow}:Send WebM {post.GetPostLink()}", ConsoleColor.Yellow);
+                        LogWrite($"{DateTime.UtcNow}:Send WebM {post.GetId()}", ConsoleColor.Yellow);
                         await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{tags}", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:WebM sended {post.GetId()}", ConsoleColor.Green);
                     }
                     catch (Exception e)
                     {
                         LogWrite($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message} " +
-                            $"(url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})",
+                            $"(url: {post.GetFileUrl()})\n\t (url: {post.GetSampleUrl()})",
                             ConsoleColor.Red, 1);
                     }
                     continue;
@@ -197,13 +206,14 @@ namespace GelbooruChannelBot
                 {
                     try
                     {
-                        LogWrite($"{DateTime.UtcNow}:Send Gif {post.GetFileUrl()}", ConsoleColor.Yellow);
+                        LogWrite($"{DateTime.UtcNow}:Send gif {post.GetId()}", ConsoleColor.Yellow);
                         await Bot.SendDocumentAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetFileUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:Gif sended  {post.GetId()}", ConsoleColor.Green);
                     }
                     catch(Exception e)
                     {
                        LogWrite($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message}" +
-                            $" (url: {post.GetFileUrl()})\n\t(sample_url: {post.GetSampleUrl()})",
+                            $" (url: {post.GetFileUrl()})\n\t(url: {post.GetSampleUrl()})",
                             ConsoleColor.Red, 1);
                     }
                     continue;
@@ -213,17 +223,17 @@ namespace GelbooruChannelBot
                 //jpeg, png и все остальное отправляем как фото
                 try
                 {
-                    long fileSize = post.GetFileSize();
+                    long fileSize = post.GetOriginalSize();
                     if (fileSize < 5000000) //5Mb
                     {
 
-                        LogWrite($"{DateTime.UtcNow}:Send pic {post.GetId()}\nUrl: {post.GetFileUrl()}", ConsoleColor.Yellow);
+                        LogWrite($"{DateTime.UtcNow}:Send pic {post.GetId()}", ConsoleColor.Yellow);
                         await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetFileUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic sended {post.GetId()}",ConsoleColor.Green);
                     }
                     else
                     {
-                        LogWrite($"{DateTime.UtcNow}:Send pic (sample) {post.GetId()}\nUrl: {post.GetFileUrl()}", ConsoleColor.Yellow);
+                        LogWrite($"{DateTime.UtcNow}:Send pic (sample) {post.GetId()}", ConsoleColor.Yellow);
                         await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetSampleUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic sended (sample) {post.GetId()}", ConsoleColor.Green);
                     }
@@ -249,12 +259,12 @@ namespace GelbooruChannelBot
             }
         }
         delegate void Writer(string text);
-        private static void LogWrite(string text, ConsoleColor color = ConsoleColor.White, int level = 0, Writer writer = null)
+        private static void LogWrite(string text, ConsoleColor color = ConsoleColor.Gray, int level = 0, Writer writer = null)
         {
-            StringBuilder builder = new StringBuilder(text);
+            StringBuilder builder = new StringBuilder("");
             builder.Append("\t", 0, level);
-            
-            if(writer != null)
+            builder.Append(text);
+            if (writer != null)
             {
                 writer(builder.ToString());
             }
