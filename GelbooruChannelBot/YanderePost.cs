@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace GelbooruChannelBot
 {
-    class YanderePost : Post
+    class YanderePost : PostBase
     {
         [JsonProperty("id")]
         public long Id { get; set; }
@@ -107,7 +107,7 @@ namespace GelbooruChannelBot
         [JsonProperty("last_commented_at")]
         public long LastCommentedAt { get; set; }
 
-        public override bool Equals(Post other)
+        public override bool Equals(PostBase other)
         {
             return Md5.Equals(other.GetHash());
         }

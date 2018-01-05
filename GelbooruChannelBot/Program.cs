@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types.InlineKeyboardButtons;
-
+using FileToSend = Telegram.Bot.Types.FileToSend;
 namespace GelbooruChannelBot
 {
 
@@ -23,9 +23,9 @@ namespace GelbooruChannelBot
         private static long AnounceChatId;
         static string Url;
         static List<string> OldPostIdList = new List<string>();
-        static readonly int MaxOldPostsCount = 40;
-        static readonly int PostsPerCheck = 20;
-        static readonly int WaitTime = 2; //30 min
+        static readonly int MaxOldPostsCount = 80;
+        static readonly int PostsPerCheck = 40;
+        static readonly int WaitTime = 600000; //2 min
 
         static string Instance = "N/A";
 
@@ -68,7 +68,7 @@ namespace GelbooruChannelBot
                     $"CHANNEL_REQUEST_URL: {Environment.GetEnvironmentVariable("CHANNEL_REQUEST_URL")}");
             }
 
-            Bot.Timeout = new TimeSpan(0, 0, 50);
+            Bot.Timeout = new TimeSpan(0, 1, 0);
             var thread = new Thread(() =>
             {
                 Console.WriteLine($"{DateTime.UtcNow}: Thread Created");
@@ -92,9 +92,9 @@ namespace GelbooruChannelBot
                     {
                         LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
                     }
-
+                    LogWrite($"Wait {WaitTime}");
                     Thread.Sleep(WaitTime);
-                    LogWrite($"Wiat {WaitTime}");
+                    
                 }
             });
             thread.Start();
@@ -108,7 +108,7 @@ namespace GelbooruChannelBot
             return true;
         }
 
-        static List<Post> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : Post
+        static List<PostBase> GetNewestPosts<T>(string url, List<string> storage, int count = 1) where T : PostBase
         {
 
             bool firstTry = false;
@@ -116,8 +116,8 @@ namespace GelbooruChannelBot
             if (storage.Count == 0) firstTry = true;
 #endif
 
-            List<Post> newPosts = new List<Post>();
-            url = url.Replace("*limit*", $"limit={count}");
+            List<PostBase> newPosts = new List<PostBase>();
+            url = url.Replace("*limit*", $"tags=webm&limit={count}");
             Console.WriteLine($"{DateTime.UtcNow}: Request {url}");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Timeout = 25000;
@@ -161,21 +161,21 @@ namespace GelbooruChannelBot
             return newPosts;
         }
 
-        static Dictionary<string, List<Post>> GetAlbums(List<Post> storage)
+        static Dictionary<string, List<PostBase>> GetAlbums(List<PostBase> storage)
         {
-            var albums = new Dictionary<string, List<Post>>();
+            var albums = new Dictionary<string, List<PostBase>>();
 
             foreach (var post in storage)
             {
                 if (post.GetFileUrl().Contains(".webm") || post.GetFileUrl().Contains(".gif"))
                 {
-                    albums.Add(post.GetId(), new List<Post>(new[] { post }));
+                    albums.Add(post.GetId(), new List<PostBase>(new[] { post }));
                     continue;
                 }
 
                 if (!albums.ContainsKey(post.GetPostAuthor()))
                 {
-                    albums.Add(post.GetPostAuthor(), new List<Post>(new[] { post }));
+                    albums.Add(post.GetPostAuthor(), new List<PostBase>(new[] { post }));
                 }
                 else
                 {
@@ -188,7 +188,7 @@ namespace GelbooruChannelBot
                         string altAuthorname = string.Concat(post.GetPostAuthor(), "*");
                         if (!albums.ContainsKey(altAuthorname))
                         {
-                            albums.Add(altAuthorname, new List<Post>(new[] { post }));
+                            albums.Add(altAuthorname, new List<PostBase>(new[] { post }));
                         }
                         else
                         {
@@ -202,7 +202,7 @@ namespace GelbooruChannelBot
 
         }
 
-        static async void SendImagesToChannel(List<Post> storage)
+        static async void SendImagesToChannel(List<PostBase> storage)
         {
             if (storage == null) return;
             if (storage.Count == 0) return;
@@ -210,44 +210,57 @@ namespace GelbooruChannelBot
             Console.WriteLine($"{DateTime.UtcNow}:Sending to channel {ChatId}");
 
             var albums = CompileAlbums(storage, 100, 4);
-            List<Post> singlePosts = new List<Post>();
+            List<PostBase> singlePosts = new List<PostBase>();
             foreach(var album in albums)
             {
                 if (album.Value.Count > 1)
                 {
                     LogWrite($"{album.Value.Count}", ConsoleColor.Yellow);
-                    await Bot.SendTextMessageAsync(ChatId, $"{album.Key}", disableNotification: true);
-                    SendAlbum(album.Value);
+                    await SendAlbumAsync(album.Value);
                 }
                 else
                 {
-                    singlePosts.Add(album.Value[0]);
+                    var post = album.Value[0];
+                    string tags = post.GetTags(15);
+
+                    //webm отправляем как ссылку
+                    if (post.GetFileUrl().Contains(".webm"))
+                    {
+                        await SendWebmAsync(new[] { post });
+                        continue;
+                    }
+
+                    //gif отправляем как документ
+                    if (post.GetFileUrl().Contains(".gif"))
+                    {
+                        await SendGifAsync(new[] { post });
+                        continue;
+                    }
+
+                    //jpeg, png и все остальное отправляем как фото
+                    await SendPicAsync(new[] { post });
+
                 }
             }
+        }
 
-            foreach (var post in singlePosts)
+        private static async Task SendWebmAsync(IEnumerable<PostBase> posts)
+        {
+            foreach(var post in posts)
             {
-                LogWrite($"{DateTime.UtcNow}:Orginal {post.GetFileUrl()}");
-                LogWrite($"Id: {post.GetId()}", level: 1);
-                LogWrite($"Size: {post.GetOriginalSize()}Byte", level: 1);
-
-                LogWrite($"{DateTime.UtcNow}:Sample {post.GetSampleUrl()}");
-                LogWrite($"Id: {post.GetId()}", level: 1);
-                LogWrite($"Size: {post.GetSampleSize()}Byte", level: 1);
-                var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
+                PostInfoLog(post);
+                if (post.GetFileUrl().Contains(".webm"))
+                {
+                    var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
                                     {
                                     new InlineKeyboardUrlButton("Post", post.GetPostLink())
                                     });
 
-                string tags = post.GetTags(15);
-                #region WebM send
-                //webm отправляем как ссылку
-                if (post.GetFileUrl().Contains(".webm"))
-                {
                     try
                     {
                         LogWrite($"{DateTime.UtcNow}:Send WebM {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{tags}", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{post.GetTags(15)}",
+                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:WebM sended {post.GetId()}", ConsoleColor.Green);
                     }
                     catch (Exception e)
@@ -256,17 +269,25 @@ namespace GelbooruChannelBot
                             $"(url: {post.GetFileUrl()})\n\t (url: {post.GetSampleUrl()})",
                             ConsoleColor.Red, 1);
                     }
-                    continue;
                 }
-                #endregion
-                #region Gif send
-                //gif отправляем как документ
+            }
+        }
+
+        private static async Task SendGifAsync(IEnumerable<PostBase> posts)
+        {
+            foreach (var post in posts)
+            {
+                PostInfoLog(post);
                 if (post.GetFileUrl().Contains(".gif"))
                 {
+                    var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
+                                    {
+                                    new InlineKeyboardUrlButton("Post", post.GetPostLink())
+                                    });
                     try
                     {
                         LogWrite($"{DateTime.UtcNow}:Send gif {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendDocumentAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetFileUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendDocumentAsync(ChatId, new FileToSend(new Uri(post.GetFileUrl())), caption: post.GetTags(15), replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Gif sended  {post.GetId()}", ConsoleColor.Green);
                     }
                     catch (Exception e)
@@ -275,11 +296,21 @@ namespace GelbooruChannelBot
                              $" (url: {post.GetFileUrl()})\n\t(url: {post.GetSampleUrl()})",
                              ConsoleColor.Red, 1);
                     }
-                    continue;
                 }
-                #endregion
-                #region Pic send
-                //jpeg, png и все остальное отправляем как фото
+            }
+
+        }
+
+        private static async Task SendPicAsync(IEnumerable<PostBase> posts)
+        {
+            foreach(var post in posts)
+            {
+                PostInfoLog(post);
+                var tags = post.GetTags(15);
+                var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
+                                    {
+                                    new InlineKeyboardUrlButton("Post", post.GetPostLink())
+                                    });
                 try
                 {
                     long fileSize = post.GetOriginalSize();
@@ -287,13 +318,13 @@ namespace GelbooruChannelBot
                     {
 
                         LogWrite($"{DateTime.UtcNow}:Send pic {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetFileUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendPhotoAsync(ChatId, new FileToSend(new Uri(post.GetFileUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic sended {post.GetId()}", ConsoleColor.Green);
                     }
                     else
                     {
                         LogWrite($"{DateTime.UtcNow}:Send pic (sample) {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendPhotoAsync(ChatId, new Telegram.Bot.Types.FileToSend(new Uri(post.GetSampleUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendPhotoAsync(ChatId, new FileToSend(new Uri(post.GetSampleUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic sended (sample) {post.GetId()}", ConsoleColor.Green);
                     }
                 }
@@ -314,7 +345,80 @@ namespace GelbooruChannelBot
                     }
 
                 }
-                #endregion
+            }
+        }
+
+        private static async Task SendAlbumAsync(List<PostBase> album)
+        {
+            var mediaList = new List<Telegram.Bot.Types.InputMediaBase>();
+            List<InlineKeyboardUrlButton[]> urlButtons = new List<InlineKeyboardUrlButton[]>();
+            
+
+            foreach (var postInAlbum in album)
+            {
+                string fileUrl = "";
+                if (postInAlbum.GetOriginalSize() > 5000000)
+                {
+                    if (postInAlbum.GetSampleSize() < 5000000)
+                    {
+                        fileUrl = postInAlbum.GetSampleUrl();
+                    }
+                }
+                else
+                {
+                    fileUrl = postInAlbum.GetFileUrl();
+                }
+                if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
+                var media = new Telegram.Bot.Types.InputMediaPhoto
+                {
+                    Media = new Telegram.Bot.Types.InputMediaType(fileUrl),
+                    Caption = postInAlbum.GetTags(10)
+                };
+                mediaList.Add(media);
+                if(urlButtons.Count == 0)
+                {
+                    urlButtons.Add(new[] 
+                    {
+                        new InlineKeyboardUrlButton($"Post {mediaList.Count}", postInAlbum.GetPostLink()),
+                        new InlineKeyboardUrlButton("This Channnel", "https://t.me/joinchat/AAAAAEJpUWYY8mRwJgUTtg")
+                    });
+                }
+                else
+                {
+                    if (urlButtons[urlButtons.Count - 1][1].Text.Equals("This Channnel"))
+                    {
+                        try
+                        {
+                            urlButtons[urlButtons.Count - 1] [1] = new InlineKeyboardUrlButton($"Post {mediaList.Count}", postInAlbum.GetPostLink());
+                        }
+                        catch { }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            urlButtons.Add(new[] 
+                            {
+                                new InlineKeyboardUrlButton($"Post {mediaList.Count}", postInAlbum.GetPostLink()),
+                                new InlineKeyboardUrlButton("This Channnel", "https://t.me/joinchat/AAAAAEJpUWYY8mRwJgUTtg")
+                            });
+
+                        }
+                        catch { }
+                    }
+                }
+               
+                
+            }
+            var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(urlButtons.ToArray());
+            try
+            {
+                await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
+                await Bot.SendTextMessageAsync(ChatId, "🔺              🔺", replyMarkup: keyboard, disableNotification: true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
             }
         }
 
@@ -337,20 +441,31 @@ namespace GelbooruChannelBot
             }
         }
 
-        private static Dictionary<string, List<Post>> CompileAlbums(IEnumerable<Post> posts, int tagsCompareCount = 30, int equalityLevel = 2)
+        private static void PostInfoLog(PostBase post)
         {
-            var albums = new Dictionary<string, Dictionary<string, List<Post>>>();
-            foreach (Post post in posts)
+            LogWrite($"{DateTime.UtcNow}:Orginal {post.GetFileUrl()}");
+            LogWrite($"Id: {post.GetId()}", level: 1);
+            LogWrite($"Size: {post.GetOriginalSize()}Byte", level: 1);
+
+            LogWrite($"{DateTime.UtcNow}:Sample {post.GetSampleUrl()}");
+            LogWrite($"Id: {post.GetId()}", level: 1);
+            LogWrite($"Size: {post.GetSampleSize()}Byte", level: 1);
+        }
+
+        private static Dictionary<string, List<PostBase>> CompileAlbums(IEnumerable<PostBase> posts, int tagsCompareCount = 30, int equalityLevel = 2)
+        {
+            var albums = new Dictionary<string, Dictionary<string, List<PostBase>>>();
+            foreach (PostBase post in posts)
             {
                 var author = post.GetPostAuthor();
                 var tags = post.GetTags(tagsCompareCount);
 
                 if (!albums.ContainsKey(author))
                 {
-                    albums[author] = new Dictionary<string, List<Post>>(
+                    albums[author] = new Dictionary<string, List<PostBase>>(
                         new[]
                         {
-                            new KeyValuePair<string, List<Post>>(tags, new List<Post>()
+                            new KeyValuePair<string, List<PostBase>>(tags, new List<PostBase>()
                             {
                                 post
                             })
@@ -385,14 +500,14 @@ namespace GelbooruChannelBot
                     }
                     if (!added)
                     {
-                            authorAlbums[tags] = new List<Post>()
+                            authorAlbums[tags] = new List<PostBase>()
                             {
                                 post
                             };
                     }
                 }
             }
-            var outDict = new Dictionary<string, List<Post>>();
+            var outDict = new Dictionary<string, List<PostBase>>();
             foreach (var authorAlbums in albums)
             {
                 var author = authorAlbums.Key;
@@ -403,44 +518,6 @@ namespace GelbooruChannelBot
             }
             return outDict;
         }
-
-        private static async void SendAlbum(List<Post> album)
-        {
-            var mediaList = new List<Telegram.Bot.Types.InputMediaBase>();
-
-            //Отправляем альбом
-            try
-            {
-                //Собираем альбом
-                foreach (var postInAlbum in album)
-                {
-                string fileUrl = "";
-                if (postInAlbum.GetOriginalSize() > 5000000)
-                {
-                    if (postInAlbum.GetSampleSize() < 5000000)
-                    {
-                        fileUrl = postInAlbum.GetSampleUrl();
-                    }
-                }
-                else
-                {
-                    fileUrl = postInAlbum.GetFileUrl();
-                }
-                if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
-                var media = new Telegram.Bot.Types.InputMediaPhoto
-                {
-                    Media = new Telegram.Bot.Types.InputMediaType(fileUrl),
-                    Caption = postInAlbum.GetTags(10)
-                };
-                mediaList.Add(media);
-                }
-
-                await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"(!!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
-            }
-        }
+     
     }
 }
