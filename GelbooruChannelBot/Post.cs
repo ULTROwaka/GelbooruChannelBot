@@ -25,7 +25,8 @@ namespace GelbooruChannelBot
             {
                 if (!ImportantTags.Contains(tag)) continue;
                 newTagsString.Add(tag);
-            }
+            } 
+        
             return newTagsString;
         }
 
@@ -48,7 +49,9 @@ namespace GelbooruChannelBot
         abstract public string GetHash();
         abstract public string GetTags(int count);
         abstract public string GetPostLink();
-
+        abstract public long GetOriginalSize();
+        abstract public long GetSampleSize();
+         
         abstract public bool Equals(Post other);
     }
 }

@@ -92,7 +92,7 @@ namespace GelbooruChannelBot
                     }
 
                     Thread.Sleep(WaitTime);
-                    LogWrite($"Wiat {WaitTime}");
+                    LogWrite($"Wait {WaitTime}");
                 }
             });
             thread.Start();
