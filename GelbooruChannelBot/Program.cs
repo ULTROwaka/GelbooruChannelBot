@@ -117,7 +117,7 @@ namespace GelbooruChannelBot
 #endif
 
             List<PostBase> newPosts = new List<PostBase>();
-            url = url.Replace("*limit*", $"tags=webm&limit={count}");
+            url = url.Replace("*limit*", $"limit={count}"); //$"tags=webm&limit={count}");
             Console.WriteLine($"{DateTime.UtcNow}: Request {url}");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Timeout = 25000;
@@ -163,24 +163,15 @@ namespace GelbooruChannelBot
 
         static async void SendImagesToChannel(List<PostBase> storage)
         {
-            if (storage == null) return;
-            if (storage.Count == 0) return;
-
-            Console.WriteLine($"{DateTime.UtcNow}:Sending to channel {ChatId}");
-
-            var albums = CompileAlbums(storage, 100, 4);
-            List<PostBase> singlePosts = new List<PostBase>();
-            foreach(var album in albums)
+            foreach (var pack in CompilePacks(storage))
             {
-                if (album.Value.Count > 1)
+                if(pack.Count > 1 && pack.Count <= 10)
                 {
-                    LogWrite($"{album.Value.Count}", ConsoleColor.Yellow);
-                    await SendAlbumAsync(album.Value);
+                    await SendAlbumAsync(pack);
+                    continue;
                 }
-                else
+                foreach (var post in pack)
                 {
-                    var post = album.Value[0];
-                    string tags = post.GetTags(15);
 
                     //webm отправляем как ссылку
                     if (post.GetFileUrl().Contains(".webm"))
@@ -198,7 +189,6 @@ namespace GelbooruChannelBot
 
                     //jpeg, png и все остальное отправляем как фото
                     await SendPicAsync(new[] { post });
-
                 }
             }
         }
@@ -410,71 +400,52 @@ namespace GelbooruChannelBot
             LogWrite($"Size: {post.GetSampleSize()}Byte", level: 1);
         }
 
-        private static Dictionary<string, List<PostBase>> CompilePacks(IEnumerable<PostBase> posts, int tagsCompareCount = 30, int equalityLevel = 2)
+        private static List<List<PostBase>> CompilePacks(IEnumerable<PostBase> posts)
         {
-            var albums = new Dictionary<string, Dictionary<string, List<PostBase>>>();
-            foreach (PostBase post in posts)
-            {
-                var author = post.GetPostAuthor();
-                var tags = post.GetTags(tagsCompareCount);
+            LogWrite($"{DateTime.UtcNow}:Compile Packs", ConsoleColor.Cyan);
+            List<List<PostBase>> packs = new List<List<PostBase>>();
 
-                if (!albums.ContainsKey(author))
-                {
-                    albums[author] = new Dictionary<string, List<PostBase>>(
-                        new[]
-                        {
-                            new KeyValuePair<string, List<PostBase>>(tags, new List<PostBase>()
-                            {
-                                post
-                            })
-                        }
-                        );
-                }
-                else
-                {
-                    var authorAlbums = albums[author];
-                    bool added = false;
-                    foreach (var key in authorAlbums.Keys)
-                    {
-                        if (authorAlbums[key].Count == 10) continue;
-                        int equalTagsCount = 0;
-                        var albumTags = key.Split(' ');
-                        foreach (var albumTag in albumTags)
-                        {
-                            foreach (var postTag in tags.Split(' '))
-                            {
-                                if (albumTag.Equals(postTag))
-                                {
-                                    equalTagsCount++;
-                                }
-                            }
-                        }
-                        if (equalTagsCount  >= (key.Split(' ').Length /  equalityLevel) || equalTagsCount == tags.Split(' ').Length)
-                        {
-                            authorAlbums[key].Add(post);
-                            added = true;
-                            break;
-                        }                       
-                    }
-                    if (!added)
-                    {
-                            authorAlbums[tags] = new List<PostBase>()
-                            {
-                                post
-                            };
-                    }
-                }
-            }
-            var outDict = new Dictionary<string, List<PostBase>>();
-            foreach (var authorAlbums in albums)
+            foreach(var post in posts)
             {
-                var author = authorAlbums.Key;
-                foreach (var album in authorAlbums.Value)
+                bool added = false;
+                
+                foreach(var pack in packs)
                 {
-                    outDict.Add($"{author}*{album.Key}", album.Value);
+                    if(pack.Count == 10)
+                    {
+                        continue;
+                    }
+                    var tempPack = new List<PostBase>(pack); //копирует или ссылки
+
+                    foreach(var tempPost in tempPack)
+                    {
+                        LogWrite($"{DateTime.UtcNow}: - checking simmilarity of {post.GetId()} and {tempPost.GetId()}", ConsoleColor.Cyan);
+                        if (post.IsSimmilar(tempPost))
+                        {
+                            pack.Add(post);
+                            added = true;
+                            LogWrite($"{DateTime.UtcNow}: - {post.GetId()} simmilar {tempPost.GetId()}", ConsoleColor.Cyan);
+                            break;                           
+                        }
+                    }
+
+                    if (added)
+                    {
+                        break;
+                    }
                 }
+
+                if (!added)
+                {
+                    packs.Add(new List<PostBase>()
+                    {
+                        post
+                    });
+                }
+
             }
-            return outDict;
+
+            return packs;
         }
      
     }

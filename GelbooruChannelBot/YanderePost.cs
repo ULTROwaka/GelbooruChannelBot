@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace GelbooruChannelBot
 {
@@ -81,7 +82,7 @@ namespace GelbooruChannelBot
         [JsonProperty("has_children")]
         public bool HasChildren { get; set; }
         [JsonProperty("parent_id")]
-        public object ParentId { get; set; }
+        public string ParentId { get; set; }
         [JsonProperty("status")]
         public string Status { get; set; }
         [JsonProperty("is_pending")]
@@ -170,6 +171,44 @@ namespace GelbooruChannelBot
         public override string GetPostAuthor()
         {
             return Author;
+        }
+
+        /// <summary>
+        /// Check if post tags simmilar
+        /// </summary>
+        /// <param name="post">Comparing post</param>
+        /// <param name="trashold"></param>
+        /// <returns></returns>
+        public override bool IsSimmilar(PostBase post, int trashold = 11)
+        {
+            
+            var x = (YanderePost)post; 
+            int simmilarityScore = 0;
+
+            if (FileUrl.Contains(".gif") || FileUrl.Contains(".webm"))
+            {
+                return false;
+            }
+
+            List<string> thisTags = new List<string>(GetTags().Split(' ').Where(w => w != "#tagme" && w != ""));
+            List<string> postTags = new List<string>(x.GetTags().Split(' ').Where(w => w != "#tagme" && w != ""));
+
+            simmilarityScore += thisTags.Intersect(postTags).Count();
+
+            if(GetPostAuthor().Equals(x.GetPostAuthor()))
+            {
+                simmilarityScore += 10;
+            }
+
+            if(ParentId != null && x.ParentId != null)
+            {
+                if(ParentId.Equals(x.ParentId))
+                {
+                    simmilarityScore += 10;
+                }
+            }
+
+            return (simmilarityScore >= trashold);
         }
     }
 }
