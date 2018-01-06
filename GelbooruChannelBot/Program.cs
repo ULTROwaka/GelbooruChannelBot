@@ -80,10 +80,10 @@ namespace GelbooruChannelBot
                         switch (Instance)
                         {
                             case "Gelbooru":
-                                SendImagesToChannel(GetNewestPosts<GelbooruPost>(Url, OldPostIdList, PostsPerCheck));
+                                SendToChannel(GetNewestPosts<GelbooruPost>(Url, OldPostIdList, PostsPerCheck));
                                 break;
                             case "Yandere":
-                                SendImagesToChannel(GetNewestPosts<YanderePost>(Url, OldPostIdList, PostsPerCheck));
+                                SendToChannel(GetNewestPosts<YanderePost>(Url, OldPostIdList, PostsPerCheck));
                                 break;
                             default: Console.WriteLine($"(!) {DateTime.UtcNow}: {Instance} can`t start"); break;
                         }
@@ -112,12 +112,12 @@ namespace GelbooruChannelBot
         {
 
             bool firstTry = false;
-#if RELEASE
+            #if RELEASE
             if (storage.Count == 0) firstTry = true;
-#endif
+            #endif
 
             List<PostBase> newPosts = new List<PostBase>();
-            url = url.Replace("*limit*", $"tags=webm&limit={count}");
+            url = url.Replace("*limit*", $"limit={count}");
             Console.WriteLine($"{DateTime.UtcNow}: Request {url}");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Timeout = 25000;
@@ -161,27 +161,15 @@ namespace GelbooruChannelBot
             return newPosts;
         }
 
-        static async void SendImagesToChannel(List<PostBase> storage)
+        static async void SendToChannel(List<PostBase> storage)
         {
             if (storage == null) return;
             if (storage.Count == 0) return;
 
             Console.WriteLine($"{DateTime.UtcNow}:Sending to channel {ChatId}");
-
-            var albums = CompileAlbums(storage, 100, 4);
-            List<PostBase> singlePosts = new List<PostBase>();
-            foreach(var album in albums)
+            
+            foreach(var post in storage)
             {
-                if (album.Value.Count > 1)
-                {
-                    LogWrite($"{album.Value.Count}", ConsoleColor.Yellow);
-                    await SendAlbumAsync(album.Value);
-                }
-                else
-                {
-                    var post = album.Value[0];
-                    string tags = post.GetTags(15);
-
                     //webm отправляем как ссылку
                     if (post.GetFileUrl().Contains(".webm"))
                     {
@@ -197,9 +185,7 @@ namespace GelbooruChannelBot
                     }
 
                     //jpeg, png и все остальное отправляем как фото
-                    await SendPicAsync(new[] { post });
-
-                }
+                    await SendPicAsync(new[] { post });              
             }
         }
 
