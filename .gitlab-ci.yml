@@ -26,7 +26,7 @@ deploy_database:
  environment:
     name: database
  only:
-   - database
+   - master
    
 deploy_yandere:
  variables:
@@ -42,11 +42,12 @@ deploy_yandere:
  stage: deploy
  dependencies:
   - job1_build
+  - deploy_database
  script:
   - env | sed -n '/CHANNEL/p; /MYSQL/p' > .env
   - docker build -t yandere-channel-bot .
   - docker stop yandere-channel-bot || true && docker rm yandere-channel-bot || true
-  - docker run --restart=always --name yandere-channel-bot -d --env-file=.env yandere-channel-bot
+  - docker run --restart=always --link PCD_db:PCD_db --name yandere-channel-bot -d --env-file=.env yandere-channel-bot
  environment:
     name: Yande.re
  only:
@@ -66,11 +67,12 @@ deploy_gelbooru:
  stage: deploy
  dependencies:
   - job1_build
+  - deploy_database
  script:
   - env | sed -n '/CHANNEL/p; /MYSQL/p' > .env
   - docker build -t gelbooruchannelbot .
   - docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true
-  - docker run --restart=always --name gelbooruchannelbot -d --env-file=.env gelbooruchannelbot
+  - docker run --restart=always --link PCD_db:PCD_db --name gelbooruchannelbot -d --env-file=.env gelbooruchannelbot
  environment:
     name: Gelbooru.com
  only:
