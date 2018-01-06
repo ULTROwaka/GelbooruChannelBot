@@ -111,5 +111,10 @@ namespace GelbooruChannelBot
         {
             return Owner;
         }
+
+        public override bool IsSimmilar(PostBase post, int trashold = 2)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
