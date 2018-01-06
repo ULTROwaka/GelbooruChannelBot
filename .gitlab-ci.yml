@@ -1,5 +1,6 @@
 stages:
   - build
+  - deploy_database
   - deploy
   
 job1_build:
@@ -18,7 +19,7 @@ deploy_database:
     MYSQL_USER_PASSWORD: $MYSQL_PASSWORD
     MYSQL_USER_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
  image: docker:latest
- stage: deploy
+ stage: deploy_database
  script:
   - env | sed -n '/MYSQL/p' > .env
   - docker stop PCD_db || true && docker rm PCD_db || true
