@@ -23,8 +23,8 @@ namespace GelbooruChannelBot
         private static long AnounceChatId;
         static string Url;
         static List<string> OldPostIdList = new List<string>();
-        static readonly int MaxOldPostsCount = 80;
-        static readonly int PostsPerCheck = 40;
+        static readonly int MaxOldPostsCount = 160;
+        static readonly int PostsPerCheck = 80;
         static readonly int WaitTime = 600000; //2 min
 
         static string Instance = "N/A";
@@ -69,7 +69,7 @@ namespace GelbooruChannelBot
             }
 
             Bot.Timeout = new TimeSpan(0, 1, 0);
-            var thread = new Thread(() =>
+            var thread = new Thread(async () =>
             {
                 Console.WriteLine($"{DateTime.UtcNow}: Thread Created");
                 while (true)
@@ -80,10 +80,10 @@ namespace GelbooruChannelBot
                         switch (Instance)
                         {
                             case "Gelbooru":
-                                SendToChannel(GetNewestPosts<GelbooruPost>(Url, OldPostIdList, PostsPerCheck));
+                                await SendToChannel(GetNewestPosts<GelbooruPost>(Url, OldPostIdList, PostsPerCheck));
                                 break;
                             case "Yandere":
-                                SendToChannel(GetNewestPosts<YanderePost>(Url, OldPostIdList, PostsPerCheck));
+                                await SendToChannel(GetNewestPosts<YanderePost>(Url, OldPostIdList, PostsPerCheck));
                                 break;
                             default: Console.WriteLine($"(!) {DateTime.UtcNow}: {Instance} can`t start"); break;
                         }
@@ -161,9 +161,9 @@ namespace GelbooruChannelBot
             return newPosts;
         }
 
-        static async void SendToChannel(List<PostBase> storage)
+        static async Task SendToChannel(List<PostBase> storage)
         {
-            foreach (var pack in CompilePacks(storage))
+            foreach (var pack in AnotherCompilePacks(storage))
             {
                 if(pack.Count > 1 && pack.Count <= 10)
                 {
@@ -408,19 +408,17 @@ namespace GelbooruChannelBot
             foreach(var post in posts)
             {
                 bool added = false;
-                
                 foreach(var pack in packs)
                 {
                     if(pack.Count == 10)
                     {
                         continue;
                     }
-                    var tempPack = new List<PostBase>(pack); //копирует или ссылки
-
+                    var tempPack = new List<PostBase>(pack);                   
                     foreach(var tempPost in tempPack)
                     {
                         LogWrite($"{DateTime.UtcNow}: - checking simmilarity of {post.GetId()} and {tempPost.GetId()}", ConsoleColor.Cyan);
-                        if (post.IsSimmilar(tempPost))
+                        if (post.IsSimilar(tempPost))
                         {
                             pack.Add(post);
                             added = true;
@@ -444,9 +442,54 @@ namespace GelbooruChannelBot
                 }
 
             }
+            return packs;
+        }
+
+        private static List<List<PostBase>> AnotherCompilePacks(IEnumerable<PostBase> posts)
+        {
+            LogWrite($"{DateTime.UtcNow}:Compile Packs", ConsoleColor.Cyan);
+            List<List<PostBase>> packs = new List<List<PostBase>>();
+
+            foreach (var post in posts)
+            {
+                int maxSimilarityScore = 0;
+                List<PostBase> maxSimilaryPack = null;
+                foreach (var pack in packs)
+                {
+                    if (pack.Count == 10)
+                    {
+                        continue;
+                    }
+                    var tempPack = new List<PostBase>(pack);
+                    int packSimilarityScore = 0;
+                    foreach (var tempPost in tempPack)
+                    {
+                        LogWrite($"{DateTime.UtcNow}: - checking simmilarity of {post.GetId()} and {tempPost.GetId()}", ConsoleColor.Cyan);
+                        packSimilarityScore += post.SimilarityScore(tempPost);
+                    }
+                    if (packSimilarityScore > maxSimilarityScore)
+                    {
+                        maxSimilarityScore = packSimilarityScore;
+                        maxSimilaryPack = pack;
+                    }
+                }
+
+                if (maxSimilaryPack == null)
+                {
+                    packs.Add(new List<PostBase>()
+                    {
+                        post
+                    });
+                }
+                else
+                {
+                    maxSimilaryPack.Add(post);
+                }
+
+            }
 
             return packs;
         }
-     
+
     }
 }

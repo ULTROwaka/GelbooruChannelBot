@@ -51,8 +51,9 @@ namespace GelbooruChannelBot
         abstract public long GetOriginalSize();
         abstract public long GetSampleSize();
         abstract public string GetPostAuthor();
-        abstract public bool IsSimmilar(PostBase post, int trashold = 2);
+        abstract public bool IsSimilar(PostBase post, int trashold = 2);
+        abstract public int SimilarityScore(PostBase post);
 
-        abstract public bool Equals(PostBase other);
+       abstract public bool Equals(PostBase other);
     }
 }

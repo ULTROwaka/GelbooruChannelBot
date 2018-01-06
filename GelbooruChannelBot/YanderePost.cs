@@ -179,36 +179,40 @@ namespace GelbooruChannelBot
         /// <param name="post">Comparing post</param>
         /// <param name="trashold"></param>
         /// <returns></returns>
-        public override bool IsSimmilar(PostBase post, int trashold = 11)
+        public override bool IsSimilar(PostBase post, int trashold = 11)
+        {           
+            return (SimilarityScore(post) >= trashold);
+        }
+
+        public override int SimilarityScore(PostBase post)
         {
-            
-            var x = (YanderePost)post; 
-            int simmilarityScore = 0;
+            var otherPost = (YanderePost)post;
+            int similarityScore = 0;
 
             if (FileUrl.Contains(".gif") || FileUrl.Contains(".webm"))
             {
-                return false;
+                return -10;
             }
 
             List<string> thisTags = new List<string>(GetTags().Split(' ').Where(w => w != "#tagme" && w != ""));
-            List<string> postTags = new List<string>(x.GetTags().Split(' ').Where(w => w != "#tagme" && w != ""));
+            List<string> postTags = new List<string>(otherPost.GetTags().Split(' ').Where(w => w != "#tagme" && w != ""));
 
-            simmilarityScore += thisTags.Intersect(postTags).Count();
+            similarityScore += thisTags.Intersect(postTags).Count();
 
-            if(GetPostAuthor().Equals(x.GetPostAuthor()))
+            if (GetPostAuthor().Equals(otherPost.GetPostAuthor()))
             {
-                simmilarityScore += 10;
+                similarityScore += 10;
             }
 
-            if(ParentId != null && x.ParentId != null)
+            if (ParentId != null && otherPost.ParentId != null)
             {
-                if(ParentId.Equals(x.ParentId))
+                if (ParentId.Equals(otherPost.ParentId))
                 {
-                    simmilarityScore += 10;
+                    similarityScore += 10;
                 }
             }
 
-            return (simmilarityScore >= trashold);
+            return similarityScore;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GelbooruChannelBot
 {
@@ -21,7 +22,7 @@ namespace GelbooruChannelBot
         [JsonProperty("owner")]
         public string Owner { get; set; }
         [JsonProperty("parent_id")]
-        public string Parent_id { get; set; }
+        public string ParentId { get; set; }
         [JsonProperty("rating")]
         public string Rating { get; set; }
         [JsonProperty("sample")]
@@ -112,9 +113,40 @@ namespace GelbooruChannelBot
             return Owner;
         }
 
-        public override bool IsSimmilar(PostBase post, int trashold = 2)
+        public override bool IsSimilar(PostBase post, int trashold = 11)
         {
-            throw new NotImplementedException();
+            return (SimilarityScore(post) >= trashold);
+        }
+
+        public override int SimilarityScore(PostBase post)
+        {
+            var otherPost = (GelbooruPost)post;
+            int similarityScore = 0;
+
+            if (FileUrl.Contains(".gif") || FileUrl.Contains(".webm"))
+            {
+                return -10;
+            }
+
+            List<string> thisTags = new List<string>(GetTags().Split(' ').Where(w => w != "#tagme" && w != "" && w != "#solo"));
+            List<string> postTags = new List<string>(otherPost.GetTags().Split(' ').Where(w => w != "#tagme" && w != "" && w != "#solo"));
+
+            similarityScore += thisTags.Intersect(postTags).Count();
+
+            if (!GetPostAuthor().Equals("Danbooru") && GetPostAuthor().Equals(otherPost.GetPostAuthor()))
+            {
+                similarityScore += 10;
+            }
+
+            if (ParentId != null && otherPost.ParentId != null)
+            {
+                if (ParentId.Equals(otherPost.ParentId))
+                {
+                    similarityScore += 10;
+                }
+            }
+
+            return similarityScore;
         }
     }
 }
