@@ -10,8 +10,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
-using Telegram.Bot.Types.InlineKeyboardButtons;
-using FileToSend = Telegram.Bot.Types.FileToSend;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.InputFiles;
+using Telegram.Bot.Types.ReplyMarkups;
+
 namespace GelbooruChannelBot
 {
 
@@ -202,7 +204,7 @@ namespace GelbooruChannelBot
                 {
                     var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
                                     {
-                                    new InlineKeyboardUrlButton("Post", post.GetPostLink())
+                                    InlineKeyboardButton.WithUrl("Post", post.GetPostLink())
                                     });
 
                     try
@@ -230,7 +232,7 @@ namespace GelbooruChannelBot
                 {
                     var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
                                     {
-                                    new InlineKeyboardUrlButton("Post", post.GetPostLink())
+                                    InlineKeyboardButton.WithUrl("Post", post.GetPostLink())
                                     });
                     try
                     {
@@ -257,7 +259,7 @@ namespace GelbooruChannelBot
                 var tags = post.GetTags(15);
                 var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
                                     {
-                                    new InlineKeyboardUrlButton("Post", post.GetPostLink())
+                                    InlineKeyboardButton.WithUrl("Post", post.GetPostLink())
                                     });
                 try
                 {
@@ -314,9 +316,9 @@ namespace GelbooruChannelBot
                     fileUrl = postInAlbum.GetFileUrl();
                 }
                 if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
-                var media = new Telegram.Bot.Types.InputMediaPhoto
+                var media = new InputMediaPhoto
                 {
-                    Media = new Telegram.Bot.Types.InputMediaType(fileUrl),
+                    Media = new InputMedia(fileUrl),
                     Caption = postInAlbum.GetTags(10)
                 };
                 mediaList.Add(media);        
