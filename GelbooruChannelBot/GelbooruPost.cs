@@ -26,7 +26,7 @@ namespace GelbooruChannelBot
         [JsonProperty("rating")]
         public string Rating { get; set; }
         [JsonProperty("sample")]
-        public string Sample { get; set; }
+        public bool Sample { get; set; }
         [JsonProperty("sample_height")]
         public string SampleHeight { get; set; }
         [JsonProperty("sample_width")]
@@ -96,11 +96,18 @@ namespace GelbooruChannelBot
 
         public override string GetSampleUrl()
         {
-            return FileUrl;
+            var tmp = FileUrl.Replace("images", "samples");
+            tmp = tmp.Insert(tmp.LastIndexOf('/') + 1, "sample_");
+            tmp = tmp.Remove(tmp.LastIndexOf('.')) + ".jpg";
+            return tmp;
         }
 
         public override long GetOriginalSize()
         {
+            if (Sample)
+            {
+                return 6000000;
+            }
             return 0;
         }
 

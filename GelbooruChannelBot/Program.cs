@@ -266,13 +266,13 @@ namespace GelbooruChannelBot
                     {
 
                         LogWrite($"{DateTime.UtcNow}:Send pic {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendPhotoAsync(ChatId, new FileToSend(new Uri(post.GetFileUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendPhotoAsync(ChatId, new FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic sended {post.GetId()}", ConsoleColor.Green);
                     }
                     else
                     {
                         LogWrite($"{DateTime.UtcNow}:Send pic (sample) {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendPhotoAsync(ChatId, new FileToSend(new Uri(post.GetSampleUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendPhotoAsync(ChatId, new FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic sended (sample) {post.GetId()}", ConsoleColor.Green);
                     }
                 }
@@ -284,7 +284,7 @@ namespace GelbooruChannelBot
                     try
                     {
                         LogWrite($"Resend pic(sample) {post.GetId()}\nUrl: {post.GetFileUrl()}", ConsoleColor.DarkYellow, 1);
-                        await Bot.SendPhotoAsync(ChatId, new FileToSend(new Uri(post.GetSampleUrl())), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendPhotoAsync(ChatId, new FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic resended {post.GetId()}", ConsoleColor.DarkGreen, 1);
                     }
                     catch
@@ -299,9 +299,6 @@ namespace GelbooruChannelBot
         private static async Task SendAlbumAsync(List<PostBase> album)
         {
             var mediaList = new List<Telegram.Bot.Types.InputMediaBase>();
-            List<InlineKeyboardUrlButton[]> urlButtons = new List<InlineKeyboardUrlButton[]>();
-            
-
             foreach (var postInAlbum in album)
             {
                 string fileUrl = "";
@@ -317,56 +314,28 @@ namespace GelbooruChannelBot
                     fileUrl = postInAlbum.GetFileUrl();
                 }
                 if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
+                if (fileUrl.Contains(".jpeg"))
+                {
+                    LogWrite("!");
+                }
                 var media = new Telegram.Bot.Types.InputMediaPhoto
                 {
                     Media = new Telegram.Bot.Types.InputMediaType(fileUrl),
                     Caption = postInAlbum.GetTags(10)
                 };
-                mediaList.Add(media);
-                if(urlButtons.Count == 0)
-                {
-                    urlButtons.Add(new[] 
-                    {
-                        new InlineKeyboardUrlButton($"Post {mediaList.Count}", postInAlbum.GetPostLink()),
-                        new InlineKeyboardUrlButton("This Channnel", "https://t.me/joinchat/AAAAAEJpUWYY8mRwJgUTtg")
-                    });
-                }
-                else
-                {
-                    if (urlButtons[urlButtons.Count - 1][1].Text.Equals("This Channnel"))
-                    {
-                        try
-                        {
-                            urlButtons[urlButtons.Count - 1] [1] = new InlineKeyboardUrlButton($"Post {mediaList.Count}", postInAlbum.GetPostLink());
-                        }
-                        catch { }
-                    }
-                    else
-                    {
-                        try
-                        {
-                            urlButtons.Add(new[] 
-                            {
-                                new InlineKeyboardUrlButton($"Post {mediaList.Count}", postInAlbum.GetPostLink()),
-                                new InlineKeyboardUrlButton("This Channnel", "https://t.me/joinchat/AAAAAEJpUWYY8mRwJgUTtg")
-                            });
-
-                        }
-                        catch { }
-                    }
-                }
-               
-                
+                mediaList.Add(media);        
             }
-            var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(urlButtons.ToArray());
             try
             {
                 await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
-                await Bot.SendTextMessageAsync(ChatId, "🔺              🔺", replyMarkup: keyboard, disableNotification: true);
             }
             catch (Exception e)
             {
-                Console.WriteLine($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}");
+                LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
+                foreach(var media in mediaList)
+                {
+                    LogWrite($"(!) {DateTime.UtcNow}:{media.Media.Url}", ConsoleColor.Red);
+                }
             }
         }
 
