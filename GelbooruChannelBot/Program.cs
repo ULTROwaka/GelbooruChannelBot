@@ -314,10 +314,6 @@ namespace GelbooruChannelBot
                     fileUrl = postInAlbum.GetFileUrl();
                 }
                 if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
-                if (fileUrl.Contains(".jpeg"))
-                {
-                    LogWrite("!");
-                }
                 var media = new Telegram.Bot.Types.InputMediaPhoto
                 {
                     Media = new Telegram.Bot.Types.InputMediaType(fileUrl),
