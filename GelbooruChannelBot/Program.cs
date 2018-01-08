@@ -27,7 +27,7 @@ namespace GelbooruChannelBot
         static List<string> OldPostIdList = new List<string>();
         static readonly int MaxOldPostsCount = 160;
         static readonly int PostsPerCheck = 80;
-        static readonly int WaitTime = 600000; //2 min
+        static readonly int WaitTime = 300000;
 
         static string Instance = "N/A";
 
@@ -202,7 +202,7 @@ namespace GelbooruChannelBot
                 PostInfoLog(post);
                 if (post.GetFileUrl().Contains(".webm"))
                 {
-                    var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
+                    var keyboard = new InlineKeyboardMarkup(new[]
                                     {
                                     InlineKeyboardButton.WithUrl("Post", post.GetPostLink())
                                     });
@@ -210,7 +210,8 @@ namespace GelbooruChannelBot
                     try
                     {
                         LogWrite($"{DateTime.UtcNow}:Send WebM {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{post.GetTags(15)}", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{post.GetTags(15)}",
+                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:WebM sended {post.GetId()}", ConsoleColor.Green);
                     }
                     catch (Exception e)
@@ -230,14 +231,15 @@ namespace GelbooruChannelBot
                 PostInfoLog(post);
                 if (post.GetFileUrl().Contains(".gif"))
                 {
-                    var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
+                    var keyboard = new InlineKeyboardMarkup(new[]
                                     {
                                     InlineKeyboardButton.WithUrl("Post", post.GetPostLink())
                                     });
                     try
                     {
                         LogWrite($"{DateTime.UtcNow}:Send gif {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendDocumentAsync(ChatId, new FileToSend(new Uri(post.GetFileUrl())), caption: post.GetTags(15), replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendDocumentAsync(ChatId, new InputOnlineFile(post.GetFileUrl()), caption: post.GetTags(15), 
+                            replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Gif sended  {post.GetId()}", ConsoleColor.Green);
                     }
                     catch (Exception e)
@@ -257,10 +259,7 @@ namespace GelbooruChannelBot
             {
                 PostInfoLog(post);
                 var tags = post.GetTags(15);
-                var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
-                                    {
-                                    InlineKeyboardButton.WithUrl("Post", post.GetPostLink())
-                                    });
+                var keyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithUrl("Post", post.GetPostLink()) });
                 try
                 {
                     long fileSize = post.GetOriginalSize();
@@ -268,13 +267,15 @@ namespace GelbooruChannelBot
                     {
 
                         LogWrite($"{DateTime.UtcNow}:Send pic {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendPhotoAsync(ChatId, new FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendPhotoAsync(ChatId, new InputOnlineFile(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, 
+                            disableNotification: true);                       
                         LogWrite($"{DateTime.UtcNow}:Pic sended {post.GetId()}", ConsoleColor.Green);
                     }
                     else
                     {
                         LogWrite($"{DateTime.UtcNow}:Send pic (sample) {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendPhotoAsync(ChatId, new FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendPhotoAsync(ChatId, new InputOnlineFile(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, 
+                            disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic sended (sample) {post.GetId()}", ConsoleColor.Green);
                     }
                 }
@@ -286,7 +287,8 @@ namespace GelbooruChannelBot
                     try
                     {
                         LogWrite($"Resend pic(sample) {post.GetId()}\nUrl: {post.GetFileUrl()}", ConsoleColor.DarkYellow, 1);
-                        await Bot.SendPhotoAsync(ChatId, new FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, disableNotification: true);
+                        await Bot.SendPhotoAsync(ChatId, new InputOnlineFile(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, 
+                            disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic resended {post.GetId()}", ConsoleColor.DarkGreen, 1);
                     }
                     catch
@@ -300,7 +302,9 @@ namespace GelbooruChannelBot
 
         private static async Task SendAlbumAsync(List<PostBase> album)
         {
-            var mediaList = new List<Telegram.Bot.Types.InputMediaBase>();
+            var mediaList = new List<InputMediaBase>();
+            List<InlineKeyboardButton[]> AllButtons = new List<InlineKeyboardButton[]>();
+            List<InlineKeyboardButton> Row = new List<InlineKeyboardButton>();
             foreach (var postInAlbum in album)
             {
                 string fileUrl = "";
@@ -321,11 +325,20 @@ namespace GelbooruChannelBot
                     Media = new InputMedia(fileUrl),
                     Caption = postInAlbum.GetTags(10)
                 };
-                mediaList.Add(media);        
+                mediaList.Add(media);
+                Row.Add(InlineKeyboardButton.WithUrl($"Post {mediaList.Count}", postInAlbum.GetPostLink()));
+                if(Row.Count == 2)
+                {
+                    AllButtons.Add(Row.ToArray());
+                    Row = new List<InlineKeyboardButton>();
+                }
             }
+            if (Row.Count > 0) AllButtons.Add(Row.ToArray());
+            var keyboard = new InlineKeyboardMarkup(AllButtons);
             try
             {
                 await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
+                await Bot.SendTextMessageAsync(ChatId, "Links", replyMarkup: keyboard, disableNotification: true);
             }
             catch (Exception e)
             {
@@ -443,6 +456,7 @@ namespace GelbooruChannelBot
 
                 if (maxSimilaryPack == null)
                 {
+                    LogWrite($"{DateTime.UtcNow}: - {post.GetId()} not find pack, and create new", ConsoleColor.Cyan);
                     packs.Add(new List<PostBase>()
                     {
                         post
@@ -450,6 +464,7 @@ namespace GelbooruChannelBot
                 }
                 else
                 {
+                    LogWrite($"{DateTime.UtcNow}: - {post.GetId()} find pack with similarity score {maxSimilarityScore}", ConsoleColor.Cyan);
                     maxSimilaryPack.Add(post);
                 }
 
