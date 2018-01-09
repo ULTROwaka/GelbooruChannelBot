@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GelbooruChannelBot
 {
@@ -21,11 +22,11 @@ namespace GelbooruChannelBot
         [JsonProperty("owner")]
         public string Owner { get; set; }
         [JsonProperty("parent_id")]
-        public string Parent_id { get; set; }
+        public string ParentId { get; set; }
         [JsonProperty("rating")]
         public string Rating { get; set; }
         [JsonProperty("sample")]
-        public string Sample { get; set; }
+        public bool Sample { get; set; }
         [JsonProperty("sample_height")]
         public string SampleHeight { get; set; }
         [JsonProperty("sample_width")]
@@ -95,17 +96,64 @@ namespace GelbooruChannelBot
 
         public override string GetSampleUrl()
         {
-            return FileUrl;
+            var tmp = FileUrl.Replace("images", "samples");
+            tmp = tmp.Insert(tmp.LastIndexOf('/') + 1, "sample_");
+            tmp = tmp.Remove(tmp.LastIndexOf('.')) + ".jpg";
+            return tmp;
         }
 
         public override long GetOriginalSize()
         {
+            if (Sample)
+            {
+                return 6000000;
+            }
             return 0;
         }
 
         public override long GetSampleSize()
         {
             return 0;
+        }
+        public override string GetPostAuthor()
+        {
+            return Owner;
+        }
+
+        public override bool IsSimilar(PostBase post, int trashold = 11)
+        {
+            return (SimilarityScore(post) >= trashold);
+        }
+
+        public override int SimilarityScore(PostBase post)
+        {
+            var otherPost = (GelbooruPost)post;
+            int similarityScore = 0;
+
+            if (FileUrl.Contains(".gif") || FileUrl.Contains(".webm"))
+            {
+                return -10;
+            }
+
+            List<string> thisTags = new List<string>(GetTags().Split(' ').Where(w => w != "#tagme" && w != "" && w != "#solo"));
+            List<string> postTags = new List<string>(otherPost.GetTags().Split(' ').Where(w => w != "#tagme" && w != "" && w != "#solo"));
+
+            similarityScore += thisTags.Intersect(postTags).Count();
+
+            if (!GetPostAuthor().Equals("Danbooru") && GetPostAuthor().Equals(otherPost.GetPostAuthor()))
+            {
+                similarityScore += 10;
+            }
+
+            if (ParentId != null && otherPost.ParentId != null)
+            {
+                if (ParentId.Equals(otherPost.ParentId))
+                {
+                    similarityScore += 10;
+                }
+            }
+
+            return similarityScore;
         }
     }
 }

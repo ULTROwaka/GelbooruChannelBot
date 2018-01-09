@@ -9,7 +9,7 @@ namespace GelbooruChannelBot
         protected List<string> ImportantTags = new List<string> {"#loli", "#futanari", "#3d", "#yuri", "#happy_sex", "#vaginal",
            "#cum_in_pussy", "#cervical_penetration", "#x_ray", "#ahegao", "#animated", "#animated_gif", "#cosplay", "#looking_at_viewer",
             "#looking_at_viewer", "#as109", "#feral_lemma", "#bestiality", "#torogao",  "#thigh_high", "#dildo", "#bondage", "#masturbation",
-            "#solo", "#anus", "#huge_penis", "#anal", "#oral", "#gokkun", "#gs_mantis", "#wntame"};
+            "#solo", "#anus", "#huge_penis", "#anal", "#oral", "#gokkun", "#gs_mantis", "#wntame", "#zhaoyebai"};
 
         protected bool IsUnavaibleTag(string tag)
         {
@@ -50,7 +50,10 @@ namespace GelbooruChannelBot
         abstract public string GetPostLink();
         abstract public long GetOriginalSize();
         abstract public long GetSampleSize();
+        abstract public string GetPostAuthor();
+        abstract public bool IsSimilar(PostBase post, int trashold = 2);
+        abstract public int SimilarityScore(PostBase post);
 
-        abstract public bool Equals(PostBase other);
+       abstract public bool Equals(PostBase other);
     }
 }

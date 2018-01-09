@@ -1,6 +1,9 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace GelbooruChannelBot
 {
@@ -79,7 +82,7 @@ namespace GelbooruChannelBot
         [JsonProperty("has_children")]
         public bool HasChildren { get; set; }
         [JsonProperty("parent_id")]
-        public object ParentId { get; set; }
+        public string ParentId { get; set; }
         [JsonProperty("status")]
         public string Status { get; set; }
         [JsonProperty("is_pending")]
@@ -163,6 +166,53 @@ namespace GelbooruChannelBot
         public override long GetSampleSize()
         {
             return SampleFileSize;
+        }
+
+        public override string GetPostAuthor()
+        {
+            return Author;
+        }
+
+        /// <summary>
+        /// Check if post tags simmilar
+        /// </summary>
+        /// <param name="post">Comparing post</param>
+        /// <param name="trashold"></param>
+        /// <returns></returns>
+        public override bool IsSimilar(PostBase post, int trashold = 11)
+        {           
+            return (SimilarityScore(post) >= trashold);
+        }
+
+        public override int SimilarityScore(PostBase post)
+        {
+            var otherPost = (YanderePost)post;
+            int similarityScore = 0;
+
+            if (FileUrl.Contains(".gif") || FileUrl.Contains(".webm"))
+            {
+                return -10;
+            }
+
+            List<string> thisTags = new List<string>(GetTags().Split(' ').Where(w => w != "#tagme" && w != ""));
+            List<string> postTags = new List<string>(otherPost.GetTags().Split(' ').Where(w => w != "#tagme" && w != ""));
+
+            similarityScore += thisTags.Intersect(postTags).Count();
+
+            if (GetPostAuthor().Equals(otherPost.GetPostAuthor()))
+            {
+                similarityScore += 10;
+            }
+
+            if (ParentId != null && otherPost.ParentId != null)
+            {
+                if (ParentId.Equals(otherPost.ParentId))
+                {
+                    similarityScore += 10;
+                }
+            }
+
+            return similarityScore;
         }
     }
 }
