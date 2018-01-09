@@ -169,12 +169,12 @@ namespace GelbooruChannelBot
         {         
             foreach (var pack in AnotherCompilePacks(storage))
             {
-                if(pack.Count > 1 && pack.Count <= 10)
+               /* if(pack.Count > 1 && pack.Count <= 10)
                 {
                     LogWrite($"{DateTime.UtcNow}:Send Album");
                     await SendAlbumAsync(pack);
                     continue;
-                }
+                }*/
                 foreach (var post in pack)
                 {
 
@@ -311,43 +311,43 @@ namespace GelbooruChannelBot
             var mediaList = new List<InputMediaBase>();
             List<InlineKeyboardButton[]> AllButtons = new List<InlineKeyboardButton[]>();
             List<InlineKeyboardButton> Row = new List<InlineKeyboardButton>();
-            try
-            {               
-                foreach (var postInAlbum in album)
+               
+            foreach (var postInAlbum in album)
+            {
+                string fileUrl = "";
+                if (postInAlbum.GetOriginalSize() > 5000000)
                 {
-                    string fileUrl = "";
-                    if (postInAlbum.GetOriginalSize() > 5000000)
+                    if (postInAlbum.GetSampleSize() < 5000000)
                     {
-                        if (postInAlbum.GetSampleSize() < 5000000)
-                        {
-                            fileUrl = postInAlbum.GetSampleUrl();
-                        }
-                    }
-                    else
-                    {
-                        fileUrl = postInAlbum.GetFileUrl();
-                    }
-                    if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
-                    var media = new InputMediaPhoto
-                    {
-                        Media = new InputMedia(fileUrl),
-                        Caption = postInAlbum.GetTags(10)
-                    };
-                    mediaList.Add(media);
-                    Row.Add(InlineKeyboardButton.WithUrl($"Post {mediaList.Count}", postInAlbum.GetPostLink()));
-                    if(Row.Count == 2)
-                    {
-                        AllButtons.Add(Row.ToArray());
-                        Row = new List<InlineKeyboardButton>();
+                        fileUrl = postInAlbum.GetSampleUrl();
                     }
                 }
-                if (Row.Count > 0) AllButtons.Add(Row.ToArray());
-                var keyboard = new InlineKeyboardMarkup(AllButtons);
+                else
+                {
+                    fileUrl = postInAlbum.GetFileUrl();
+                }
+                if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
+                var media = new InputMediaPhoto
+                {
+                    Media = new InputMedia(fileUrl),
+                    Caption = postInAlbum.GetTags(10)
+                };
+                mediaList.Add(media);
+                Row.Add(InlineKeyboardButton.WithUrl($"Post {mediaList.Count}", postInAlbum.GetPostLink()));
+                if(Row.Count == 2)
+                {
+                    AllButtons.Add(Row.ToArray());
+                    Row = new List<InlineKeyboardButton>();
+                }
+            }
 
-                    LogWrite($"{DateTime.UtcNow}:Send Album !");
-                    await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
-                    LogWrite($"{DateTime.UtcNow}:Send Buttons !");
-                    await Bot.SendTextMessageAsync(ChatId, "Links", replyMarkup: keyboard, disableNotification: true);
+            if (Row.Count > 0) AllButtons.Add(Row.ToArray());
+            var keyboard = new InlineKeyboardMarkup(AllButtons);
+
+            try
+            {
+                await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
+                await Bot.SendTextMessageAsync(ChatId, "Links", replyMarkup: keyboard, disableNotification: true);
             }
             catch (Exception e)
             {
