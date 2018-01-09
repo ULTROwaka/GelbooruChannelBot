@@ -167,6 +167,7 @@ namespace GelbooruChannelBot
 
         static async Task SendToChannel(List<PostBase> storage)
         {
+            LogWrite($"{DateTime.UtcNow}:Start sending to channel");
             foreach (var pack in AnotherCompilePacks(storage))
             {
                 if(pack.Count > 1 && pack.Count <= 10)
