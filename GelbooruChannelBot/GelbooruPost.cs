@@ -138,18 +138,29 @@ namespace GelbooruChannelBot
             List<string> thisTags = new List<string>(GetTags().Split(' ').Where(w => w != "#tagme" && w != "" && w != "#solo"));
             List<string> postTags = new List<string>(otherPost.GetTags().Split(' ').Where(w => w != "#tagme" && w != "" && w != "#solo"));
 
-            similarityScore += thisTags.Intersect(postTags).Count();
-
-            if (!GetPostAuthor().Equals("Danbooru") && GetPostAuthor().Equals(otherPost.GetPostAuthor()))
+            foreach(var tag in thisTags.Intersect(postTags))
             {
-                similarityScore += 10;
+                if (ImportantTags.Contains(tag))
+                {
+                    similarityScore += 100;
+                }
+                else
+                {
+                    similarityScore += 1;
+                }
+            }
+            //similarityScore += thisTags.Intersect(postTags).Count();
+
+            if (!GetPostAuthor().Equals("danbooru") && GetPostAuthor().Equals(otherPost.GetPostAuthor()))
+            {              
+                similarityScore += 100;
             }
 
             if (ParentId != null && otherPost.ParentId != null)
             {
                 if (ParentId.Equals(otherPost.ParentId))
                 {
-                    similarityScore += 10;
+                    similarityScore += 100;
                 }
             }
 

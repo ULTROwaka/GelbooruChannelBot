@@ -95,14 +95,12 @@ namespace GelbooruChannelBot
                         LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
                     }
                     LogWrite($"Wait {WaitTime}");
-                    Thread.Sleep(WaitTime);
-                    
+                    Thread.Sleep(WaitTime);                    
                 }
             });
             thread.Start();
-            Console.ReadLine();
-            Console.ReadLine();
-            Console.ReadLine();
+            Console.ReadKey(true);
+            thread.Join();
             Console.WriteLine($"{DateTime.UtcNow}: {Instance} Stop");
         }
 
@@ -121,7 +119,7 @@ namespace GelbooruChannelBot
             #endif
 
             List<PostBase> newPosts = new List<PostBase>();
-            url = url.Replace("*limit*", $"limit={count}"); //$"tags=webm&limit={count}");
+            url = url.Replace("*limit*", $"limit={count}");
             Console.WriteLine($"{DateTime.UtcNow}: Request {url}");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Timeout = 25000;
@@ -169,15 +167,14 @@ namespace GelbooruChannelBot
         {         
             foreach (var pack in AnotherCompilePacks(storage))
             {
-               /* if(pack.Count > 1 && pack.Count <= 10)
+                if(pack.Count > 1 && pack.Count <= 10)
                 {
                     LogWrite($"{DateTime.UtcNow}:Send Album");
                     await SendAlbumAsync(pack);
                     continue;
-                }*/
+                }
                 foreach (var post in pack)
                 {
-
                     //webm отправляем как ссылку
                     if (post.GetFileUrl().Contains(".webm"))
                     {
@@ -309,9 +306,9 @@ namespace GelbooruChannelBot
         private static async Task SendAlbumAsync(List<PostBase> album)
         {
             var mediaList = new List<InputMediaBase>();
-            List<InlineKeyboardButton[]> AllButtons = new List<InlineKeyboardButton[]>();
-            List<InlineKeyboardButton> Row = new List<InlineKeyboardButton>();
-               
+            List<InlineKeyboardButton[]> allButtons = new List<InlineKeyboardButton[]>();
+            List<InlineKeyboardButton> row = new List<InlineKeyboardButton>();
+            string links = "";   
             foreach (var postInAlbum in album)
             {
                 string fileUrl = "";
@@ -333,21 +330,26 @@ namespace GelbooruChannelBot
                     Caption = postInAlbum.GetTags(10)
                 };
                 mediaList.Add(media);
-                Row.Add(InlineKeyboardButton.WithUrl($"Post {mediaList.Count}", postInAlbum.GetPostLink()));
-                if(Row.Count == 2)
+                links = string.Concat(links, $"\n<a href=\"{postInAlbum.GetPostLink()}\">Post {mediaList.Count}</a>");
+                row.Add(InlineKeyboardButton.WithUrl($"Post {mediaList.Count}", postInAlbum.GetPostLink()));
+                if(row.Count == 2)
                 {
-                    AllButtons.Add(Row.ToArray());
-                    Row = new List<InlineKeyboardButton>();
+                    allButtons.Add(row.ToArray());
+                    row = new List<InlineKeyboardButton>();
                 }
             }
 
-            if (Row.Count > 0) AllButtons.Add(Row.ToArray());
-            var keyboard = new InlineKeyboardMarkup(AllButtons);
+            if (row.Count > 0)
+            {
+                allButtons.Add(row.ToArray());
+            }
+            var keyboard = new InlineKeyboardMarkup(allButtons);
 
             try
             {
                 await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
                 await Bot.SendTextMessageAsync(ChatId, "Links", replyMarkup: keyboard, disableNotification: true);
+                //await Bot.SendTextMessageAsync(ChatId, links, parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,  disableNotification: true);
             }
             catch (Exception e)
             {
