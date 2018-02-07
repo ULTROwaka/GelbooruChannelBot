@@ -1,6 +1,5 @@
 stages:
   - build
-  - deploy_database
   - deploy
   
 job1_build:
@@ -43,7 +42,6 @@ deploy_yandere:
  stage: deploy
  dependencies:
   - job1_build
-  - deploy_database
  script:
   - env | sed -n '/CHANNEL/p; /MYSQL/p' > .env
   - docker build -t yandere-channel-bot .
@@ -68,7 +66,6 @@ deploy_gelbooru:
  stage: deploy
  dependencies:
   - job1_build
-  - deploy_database
  script:
   - env | sed -n '/CHANNEL/p; /MYSQL/p' > .env
   - docker build -t gelbooruchannelbot .
