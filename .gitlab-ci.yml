@@ -6,7 +6,7 @@ job1_build:
  image: microsoft/dotnet:latest
  stage: build
  script:
-#  - dotnet restore GelbooruChannelBot
+   - dotnet restore GelbooruChannelBot
 #  - dotnet build GelbooruChannelBot
 #  - dotnet publish -c Release -o out
  only:
