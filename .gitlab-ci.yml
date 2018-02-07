@@ -1,6 +1,5 @@
 stages:
   - build
-  - deploy_database
   - deploy
   
 job1_build:
@@ -11,22 +10,6 @@ job1_build:
   - dotnet build GelbooruChannelBot
  only:
    - dev
-   - master
-
-deploy_database:
- variables:
-    MYSQL_USER_NAME: $MYSQL_USER
-    MYSQL_USER_PASSWORD: $MYSQL_PASSWORD
-    MYSQL_USER_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
- image: docker:latest
- stage: deploy_database
- script:
-  - env | sed -n '/MYSQL/p' > .env
-  - docker stop PCD_db || true && docker rm PCD_db || true
-  - docker run --restart=always --name PCD_db  -d -v mysqldata:/var/lib/mysql --env-file=.env mysql
- environment:
-    name: database
- only:
    - master
    
 deploy_yandere:
@@ -43,12 +26,11 @@ deploy_yandere:
  stage: deploy
  dependencies:
   - job1_build
-  - deploy_database
  script:
   - env | sed -n '/CHANNEL/p; /MYSQL/p' > .env
   - docker build -t yandere-channel-bot .
   - docker stop yandere-channel-bot || true && docker rm yandere-channel-bot || true
-  - docker run --restart=always --link PCD_db:PCD_db --name yandere-channel-bot -d --env-file=.env yandere-channel-bot
+  - docker run --restart=always --name yandere-channel-bot -d --env-file=.env yandere-channel-bot
  environment:
     name: Yande.re
  only:
@@ -68,12 +50,11 @@ deploy_gelbooru:
  stage: deploy
  dependencies:
   - job1_build
-  - deploy_database
  script:
   - env | sed -n '/CHANNEL/p; /MYSQL/p' > .env
   - docker build -t gelbooruchannelbot .
   - docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true
-  - docker run --restart=always --link PCD_db:PCD_db --name gelbooruchannelbot -d --env-file=.env gelbooruchannelbot
+  - docker run --restart=always --name gelbooruchannelbot -d --env-file=.env gelbooruchannelbot
  environment:
     name: Gelbooru.com
  only:
