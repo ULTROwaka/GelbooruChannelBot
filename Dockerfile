@@ -1,7 +1,7 @@
 FROM microsoft/dotnet:latest
 
 COPY . /app
-COPY GelbooruChannelBot/out/ /app
+COPY out/ /app
 RUN bash -c 'ls -la /app'
 WORKDIR /app
 
