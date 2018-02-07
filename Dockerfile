@@ -1,9 +1,10 @@
 FROM microsoft/dotnet:latest
 
 COPY . /app
-COPY out/ /app
-RUN bash -c 'ls -la /app'
+RUN bash -c 'ls -lah /app'
+
 WORKDIR /app
+
 
 #RUN dotnet restore GelbooruChannelBot.sln
 
