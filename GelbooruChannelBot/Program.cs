@@ -119,7 +119,6 @@ namespace GelbooruChannelBot
             });
             thread.Start();
             Console.ReadLine();
-            thread.Join();
             Console.WriteLine($"{DateTime.UtcNow}: {Instance} Stop");
         }
 
