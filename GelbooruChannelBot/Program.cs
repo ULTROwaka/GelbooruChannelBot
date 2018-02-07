@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.InputFiles;
+using Telegram.Bot.Types.InlineKeyboardButtons;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace GelbooruChannelBot
@@ -184,15 +184,8 @@ namespace GelbooruChannelBot
 
         static async Task SendToChannel(List<PostBase> storage)
         {         
-            foreach (var pack in AnotherCompilePacks(storage))
-            {
-               /* if(pack.Count > 1 && pack.Count <= 10)
-                {
-                    LogWrite($"{DateTime.UtcNow}:Send Album");
-                    await SendAlbumAsync(pack);
-                    continue;
-                }*/
-                foreach (var post in pack)
+
+                foreach (var post in storage)
                 {
                     //webm отправляем как ссылку
                     if (post.GetFileUrl().Contains(".webm"))
@@ -219,7 +212,6 @@ namespace GelbooruChannelBot
                     //jpeg, png и все остальное отправляем как фото
                     await SendPicAsync(new[] { post });
                 }
-            }
         }
 
         private static async Task SendWebmAsync(IEnumerable<PostBase> posts)
@@ -265,7 +257,7 @@ namespace GelbooruChannelBot
                     try
                     {
                         LogWrite($"{DateTime.UtcNow}:Send gif {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendDocumentAsync(ChatId, new InputOnlineFile(post.GetFileUrl()), caption: post.GetTags(15), 
+                        await Bot.SendDocumentAsync(ChatId, new FileToSend(post.GetFileUrl()), caption: post.GetTags(15), 
                             replyMarkup: keyboard, disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Gif sended  {post.GetId()}", ConsoleColor.Green);
                     }
@@ -286,7 +278,7 @@ namespace GelbooruChannelBot
             {
                 PostInfoLog(post);
                 var tags = post.GetTags(15);
-                var keyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithUrl("Post", post.GetPostLink()) });
+                var keyboard = new InlineKeyboardMarkup(new[] { new InlineKeyboardUrlButton("Post", post.GetPostLink()) });
                 try
                 {
                     long fileSize = post.GetOriginalSize();
@@ -294,14 +286,14 @@ namespace GelbooruChannelBot
                     {
 
                         LogWrite($"{DateTime.UtcNow}:Send pic {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendPhotoAsync(ChatId, new InputOnlineFile(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, 
+                        await Bot.SendPhotoAsync(ChatId, new FileToSend(post.GetFileUrl()), caption: tags, replyMarkup: keyboard, 
                             disableNotification: true);                       
                         LogWrite($"{DateTime.UtcNow}:Pic sended {post.GetId()}", ConsoleColor.Green);
                     }
                     else
                     {
                         LogWrite($"{DateTime.UtcNow}:Send pic (sample) {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendPhotoAsync(ChatId, new InputOnlineFile(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, 
+                        await Bot.SendPhotoAsync(ChatId, new FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, 
                             disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic sended (sample) {post.GetId()}", ConsoleColor.Green);
                     }
@@ -314,7 +306,7 @@ namespace GelbooruChannelBot
                     try
                     {
                         LogWrite($"Resend pic(sample) {post.GetId()}\nUrl: {post.GetFileUrl()}", ConsoleColor.DarkYellow, 1);
-                        await Bot.SendPhotoAsync(ChatId, new InputOnlineFile(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, 
+                        await Bot.SendPhotoAsync(ChatId, new FileToSend(post.GetSampleUrl()), caption: tags, replyMarkup: keyboard, 
                             disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Pic resended {post.GetId()}", ConsoleColor.DarkGreen, 1);
                     }
@@ -326,67 +318,7 @@ namespace GelbooruChannelBot
                 }
             }
         }
-
-        private static async Task SendAlbumAsync(List<PostBase> album)
-        {
-            var mediaList = new List<InputMediaBase>();
-            List<InlineKeyboardButton[]> allButtons = new List<InlineKeyboardButton[]>();
-            List<InlineKeyboardButton> row = new List<InlineKeyboardButton>();
-            string links = "";
-
-                foreach (var postInAlbum in album)
-                {
-                    string fileUrl = "";
-                    if (postInAlbum.GetOriginalSize() > 5000000)
-                    {
-                        if (postInAlbum.GetSampleSize() < 5000000)
-                        {
-                            fileUrl = postInAlbum.GetSampleUrl();
-                        }
-                    }
-                    else
-                    {
-                        fileUrl = postInAlbum.GetFileUrl();
-                    }
-                    if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
-                    var media = new InputMediaPhoto
-                    {
-                        Media = new InputMedia(fileUrl),
-                        Caption = postInAlbum.GetTags(10)
-                    };
-                    LogWrite($"{DateTime.UtcNow}: check 3", ConsoleColor.Red);
-                    mediaList.Add(media);
-                    links = string.Concat(links, $"\n<a href=\"{postInAlbum.GetPostLink()}\">Post {mediaList.Count}</a>");
-                    row.Add(InlineKeyboardButton.WithUrl($"Post {mediaList.Count}", postInAlbum.GetPostLink()));
-                    if (row.Count == 2)
-                    {
-                        allButtons.Add(row.ToArray());
-                        row = new List<InlineKeyboardButton>();
-                    }
-                }
-                if (row.Count > 0)
-                {
-                    allButtons.Add(row.ToArray());
-                }
-                var keyboard = new InlineKeyboardMarkup(allButtons);
-
-            try
-            {
-                LogWrite($"{DateTime.UtcNow}: Post album pics", ConsoleColor.Yellow);
-                await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
-                LogWrite($"{DateTime.UtcNow}: Post buttons", ConsoleColor.Yellow);
-                await Bot.SendTextMessageAsync(ChatId, "🔗Links", replyMarkup: keyboard, disableNotification: true);
-            }
-            catch (Exception e)
-            {
-                LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
-                foreach (var media in mediaList)
-                {
-                    LogWrite($"(!) {DateTime.UtcNow}:{media.Media.Url}", ConsoleColor.Red);
-                }
-            }
-        }
-
+      
         private static async Task SendMp4Async(IEnumerable<PostBase> posts)
         {
             foreach (var post in posts)
@@ -396,13 +328,13 @@ namespace GelbooruChannelBot
                 {
                     var keyboard = new InlineKeyboardMarkup(new[]
                                     {
-                                    InlineKeyboardButton.WithUrl("Post", post.GetPostLink())
+                                    new InlineKeyboardUrlButton("Post", post.GetPostLink())
                                     });
 
                     try
                     {
                         LogWrite($"{DateTime.UtcNow}:Send Mp4 {post.GetId()}", ConsoleColor.Yellow);
-                        await Bot.SendPhotoAsync(ChatId, new InputOnlineFile(post.GetFileUrl()), caption: post.GetTags(10), replyMarkup: keyboard,
+                        await Bot.SendPhotoAsync(ChatId, new FileToSend(post.GetFileUrl()), caption: post.GetTags(10), replyMarkup: keyboard,
                            disableNotification: true);
                         LogWrite($"{DateTime.UtcNow}:Mp4 sended {post.GetId()}", ConsoleColor.Green);
                     }
