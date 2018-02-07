@@ -121,7 +121,7 @@ namespace GelbooruChannelBot
 #pragma warning restore CS0162 // Обнаружен недостижимый код
             });
             thread.Start();
-
+            thread.Join();
             Console.ReadLine();
         }
 
@@ -136,7 +136,7 @@ namespace GelbooruChannelBot
 
             bool firstTry = false;
 
-            if (storage.Count == 0) firstTry = true;
+            //if (storage.Count == 0) firstTry = true;
 
             List<PostBase> newPosts = new List<PostBase>();
             url = url.Replace("*limit*", $"limit={count}");
