@@ -59,8 +59,24 @@ namespace GelbooruChannelBot
             }
 
             Console.WriteLine($"{DateTime.UtcNow}: {Url}");
-            if (Url.Contains("gelbooru")) Instance = "Gelbooru";
-            else if (Url.Contains("yande.re")) Instance = "Yandere";
+            if (Url.Contains("gelbooru"))
+            {
+                Instance = "Gelbooru";
+            }
+            else
+            {
+                if (Url.Contains("yande.re"))
+                {
+                    Instance = "Yandere";
+                }
+                else
+                {
+                    if (Url.Contains("danbooru.donmai.us"))
+                    {
+                        Instance = "Danbooru";
+                    }
+                }
+            }        
 
             if (AnounceBot != null && AnounceChatId != 0)
             {
@@ -87,12 +103,15 @@ namespace GelbooruChannelBot
                             case "Yandere":
                                 await SendToChannel(GetNewestPosts<YanderePost>(Url, OldPostIdList, PostsPerCheck));
                                 break;
+                            case "Danbooru":
+                                await SendToChannel(GetNewestPosts<DanbooruPost>(Url, OldPostIdList, PostsPerCheck));
+                                break;
                             default: Console.WriteLine($"(!) {DateTime.UtcNow}: {Instance} can`t start"); break;
                         }
                     }
                     catch (Exception e)
                     {
-                        LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
+                        LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:{e.InnerException}:{e.StackTrace}:{e.Message}", ConsoleColor.Red);
                     }
                     LogWrite($"Wait {WaitTime}");
                     Thread.Sleep(WaitTime);                    
@@ -139,7 +158,8 @@ namespace GelbooruChannelBot
             //Сериализуем полученные данные
             using (var reader = new StreamReader(resp.GetResponseStream()))
             {
-                var posts = JsonConvert.DeserializeObject<List<T>>(reader.ReadToEnd());
+                var str = reader.ReadToEnd();
+                var posts = JsonConvert.DeserializeObject<List<T>>(str);
 
                 foreach (var post in posts)
                 {
@@ -191,7 +211,12 @@ namespace GelbooruChannelBot
                         continue;
                     }
 
-                    LogWrite($"{DateTime.UtcNow}:Send Photo");
+                    //mp4 отправляем как видео
+                    if (post.GetFileUrl().Contains(".mp4"))
+                    {
+                        await SendMp4Async(new[] { post });
+                        continue;
+                    }
                     //jpeg, png и все остальное отправляем как фото
                     await SendPicAsync(new[] { post });
                 }
@@ -348,8 +373,7 @@ namespace GelbooruChannelBot
             try
             {
                 await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
-                await Bot.SendTextMessageAsync(ChatId, "Links", replyMarkup: keyboard, disableNotification: true);
-                //await Bot.SendTextMessageAsync(ChatId, links, parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,  disableNotification: true);
+                await Bot.SendTextMessageAsync(ChatId, "🔗Links", replyMarkup: keyboard, disableNotification: true);
             }
             catch (Exception e)
             {
@@ -357,6 +381,35 @@ namespace GelbooruChannelBot
                 foreach(var media in mediaList)
                 {
                     LogWrite($"(!) {DateTime.UtcNow}:{media.Media.Url}", ConsoleColor.Red);
+                }
+            }
+        }
+
+        private static async Task SendMp4Async(IEnumerable<PostBase> posts)
+        {
+            foreach (var post in posts)
+            {
+                PostInfoLog(post);
+                if (post.GetFileUrl().Contains(".mp4"))
+                {
+                    var keyboard = new InlineKeyboardMarkup(new[]
+                                    {
+                                    InlineKeyboardButton.WithUrl("Post", post.GetPostLink())
+                                    });
+
+                    try
+                    {
+                        LogWrite($"{DateTime.UtcNow}:Send Mp4 {post.GetId()}", ConsoleColor.Yellow);
+                        await Bot.SendPhotoAsync(ChatId, new InputOnlineFile(post.GetFileUrl()), caption: post.GetTags(10), replyMarkup: keyboard,
+                           disableNotification: true);
+                        LogWrite($"{DateTime.UtcNow}:Mp4 sended {post.GetId()}", ConsoleColor.Green);
+                    }
+                    catch (Exception e)
+                    {
+                        LogWrite($"(!) {DateTime.UtcNow}: [{e.GetType()}] {e.Source}:::{e.Message} " +
+                            $"(url: {post.GetFileUrl()})\n\t (url: {post.GetSampleUrl()})",
+                            ConsoleColor.Red, 1);
+                    }
                 }
             }
         }
