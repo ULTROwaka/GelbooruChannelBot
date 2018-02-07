@@ -58,7 +58,7 @@ namespace GelbooruChannelBot
                 LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
             }
 
-            Console.WriteLine($"{DateTime.UtcNow}: {Url}");
+            LogWrite($"{DateTime.UtcNow}: {Url}");
             if (Url.Contains("gelbooru"))
             {
                 Instance = "Gelbooru";
@@ -89,12 +89,12 @@ namespace GelbooruChannelBot
             Bot.Timeout = new TimeSpan(0, 1, 0);
             var thread = new Thread(async () =>
             {
-                Console.WriteLine($"{DateTime.UtcNow}: Thread Created");
+                LogWrite($"{DateTime.UtcNow}: Thread Created");
                 while (true)
                 {
                     try
                     {
-                        Console.WriteLine($"{DateTime.UtcNow}:Try URL {Url}");
+                        LogWrite($"{DateTime.UtcNow}:Try URL {Url}");
                         switch (Instance)
                         {
                             case "Gelbooru":
@@ -116,10 +116,12 @@ namespace GelbooruChannelBot
                     LogWrite($"Wait {WaitTime}");
                     Thread.Sleep(WaitTime);                    
                 }
+#pragma warning disable CS0162 // Обнаружен недостижимый код
+                LogWrite($"{DateTime.UtcNow}: Thread Dead");
+#pragma warning restore CS0162 // Обнаружен недостижимый код
             });
             thread.Start();
             Console.ReadLine();
-            Console.WriteLine($"{DateTime.UtcNow}: {Instance} Stop");
         }
 
 
