@@ -186,12 +186,12 @@ namespace GelbooruChannelBot
         {         
             foreach (var pack in AnotherCompilePacks(storage))
             {
-                if(pack.Count > 1 && pack.Count <= 10)
+               /* if(pack.Count > 1 && pack.Count <= 10)
                 {
                     LogWrite($"{DateTime.UtcNow}:Send Album");
                     await SendAlbumAsync(pack);
                     continue;
-                }
+                }*/
                 foreach (var post in pack)
                 {
                     //webm отправляем как ссылку
@@ -333,9 +333,7 @@ namespace GelbooruChannelBot
             List<InlineKeyboardButton[]> allButtons = new List<InlineKeyboardButton[]>();
             List<InlineKeyboardButton> row = new List<InlineKeyboardButton>();
             string links = "";
-            try
-            {
-                LogWrite($"{DateTime.UtcNow}: check 1", ConsoleColor.Red);
+
                 foreach (var postInAlbum in album)
                 {
                     string fileUrl = "";
@@ -351,7 +349,6 @@ namespace GelbooruChannelBot
                         fileUrl = postInAlbum.GetFileUrl();
                     }
                     if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
-                    LogWrite($"{DateTime.UtcNow}: check 2", ConsoleColor.Red);
                     var media = new InputMediaPhoto
                     {
                         Media = new InputMedia(fileUrl),
@@ -361,23 +358,23 @@ namespace GelbooruChannelBot
                     mediaList.Add(media);
                     links = string.Concat(links, $"\n<a href=\"{postInAlbum.GetPostLink()}\">Post {mediaList.Count}</a>");
                     row.Add(InlineKeyboardButton.WithUrl($"Post {mediaList.Count}", postInAlbum.GetPostLink()));
-                    LogWrite($"{DateTime.UtcNow}: check 3", ConsoleColor.Red);
                     if (row.Count == 2)
                     {
                         allButtons.Add(row.ToArray());
                         row = new List<InlineKeyboardButton>();
                     }
                 }
-                LogWrite($"{DateTime.UtcNow}: check 4", ConsoleColor.Red);
                 if (row.Count > 0)
                 {
                     allButtons.Add(row.ToArray());
                 }
                 var keyboard = new InlineKeyboardMarkup(allButtons);
 
-                LogWrite($"{DateTime.UtcNow}: Post album pics", ConsoleColor.Red);
+            try
+            {
+                LogWrite($"{DateTime.UtcNow}: Post album pics", ConsoleColor.Yellow);
                 await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
-                LogWrite($"{DateTime.UtcNow}: Post buttons", ConsoleColor.Red);
+                LogWrite($"{DateTime.UtcNow}: Post buttons", ConsoleColor.Yellow);
                 await Bot.SendTextMessageAsync(ChatId, "🔗Links", replyMarkup: keyboard, disableNotification: true);
             }
             catch (Exception e)
