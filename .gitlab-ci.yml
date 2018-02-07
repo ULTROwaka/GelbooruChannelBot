@@ -1,6 +1,6 @@
 stages:
   - build
-  - deploy
+  - deploy.
   
 job1_build:
  image: microsoft/dotnet:latest
@@ -10,22 +10,6 @@ job1_build:
   - dotnet build GelbooruChannelBot
  only:
    - dev
-   - master
-
-deploy_database:
- variables:
-    MYSQL_USER_NAME: $MYSQL_USER
-    MYSQL_USER_PASSWORD: $MYSQL_PASSWORD
-    MYSQL_USER_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
- image: docker:latest
- stage: deploy_database
- script:
-  - env | sed -n '/MYSQL/p' > .env
-  - docker stop PCD_db || true && docker rm PCD_db || true
-  - docker run --restart=always --name PCD_db  -d -v mysqldata:/var/lib/mysql --env-file=.env mysql
- environment:
-    name: database
- only:
    - master
    
 deploy_yandere:
