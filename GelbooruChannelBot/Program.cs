@@ -334,7 +334,8 @@ namespace GelbooruChannelBot
             List<InlineKeyboardButton> row = new List<InlineKeyboardButton>();
             string links = "";
             try
-            {                
+            {
+                LogWrite($"{DateTime.UtcNow}: check 1", ConsoleColor.Red);
                 foreach (var postInAlbum in album)
                 {
                     string fileUrl = "";
@@ -350,29 +351,33 @@ namespace GelbooruChannelBot
                         fileUrl = postInAlbum.GetFileUrl();
                     }
                     if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
+                    LogWrite($"{DateTime.UtcNow}: check 2", ConsoleColor.Red);
                     var media = new InputMediaPhoto
                     {
                         Media = new InputMedia(fileUrl),
                         Caption = postInAlbum.GetTags(10)
                     };
+                    LogWrite($"{DateTime.UtcNow}: check 3", ConsoleColor.Red);
                     mediaList.Add(media);
                     links = string.Concat(links, $"\n<a href=\"{postInAlbum.GetPostLink()}\">Post {mediaList.Count}</a>");
                     row.Add(InlineKeyboardButton.WithUrl($"Post {mediaList.Count}", postInAlbum.GetPostLink()));
+                    LogWrite($"{DateTime.UtcNow}: check 3", ConsoleColor.Red);
                     if (row.Count == 2)
                     {
                         allButtons.Add(row.ToArray());
                         row = new List<InlineKeyboardButton>();
                     }
                 }
-
+                LogWrite($"{DateTime.UtcNow}: check 4", ConsoleColor.Red);
                 if (row.Count > 0)
                 {
                     allButtons.Add(row.ToArray());
                 }
                 var keyboard = new InlineKeyboardMarkup(allButtons);
 
-
+                LogWrite($"{DateTime.UtcNow}: Post album pics", ConsoleColor.Red);
                 await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
+                LogWrite($"{DateTime.UtcNow}: Post buttons", ConsoleColor.Red);
                 await Bot.SendTextMessageAsync(ChatId, "🔗Links", replyMarkup: keyboard, disableNotification: true);
             }
             catch (Exception e)
