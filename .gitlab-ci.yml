@@ -7,7 +7,8 @@ job1_build:
  stage: build
  script:
   - dotnet restore GelbooruChannelBot
-  - dotnet build GelbooruChannelBot
+#  - dotnet build GelbooruChannelBot
+  - dotnet publish -c Release -o out
  only:
    - dev
    - master
