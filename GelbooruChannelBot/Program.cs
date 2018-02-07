@@ -332,52 +332,53 @@ namespace GelbooruChannelBot
             var mediaList = new List<InputMediaBase>();
             List<InlineKeyboardButton[]> allButtons = new List<InlineKeyboardButton[]>();
             List<InlineKeyboardButton> row = new List<InlineKeyboardButton>();
-            string links = "";   
-            foreach (var postInAlbum in album)
-            {
-                string fileUrl = "";
-                if (postInAlbum.GetOriginalSize() > 5000000)
+            string links = "";
+            try
+            {                
+                foreach (var postInAlbum in album)
                 {
-                    if (postInAlbum.GetSampleSize() < 5000000)
+                    string fileUrl = "";
+                    if (postInAlbum.GetOriginalSize() > 5000000)
                     {
-                        fileUrl = postInAlbum.GetSampleUrl();
+                        if (postInAlbum.GetSampleSize() < 5000000)
+                        {
+                            fileUrl = postInAlbum.GetSampleUrl();
+                        }
+                    }
+                    else
+                    {
+                        fileUrl = postInAlbum.GetFileUrl();
+                    }
+                    if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
+                    var media = new InputMediaPhoto
+                    {
+                        Media = new InputMedia(fileUrl),
+                        Caption = postInAlbum.GetTags(10)
+                    };
+                    mediaList.Add(media);
+                    links = string.Concat(links, $"\n<a href=\"{postInAlbum.GetPostLink()}\">Post {mediaList.Count}</a>");
+                    row.Add(InlineKeyboardButton.WithUrl($"Post {mediaList.Count}", postInAlbum.GetPostLink()));
+                    if (row.Count == 2)
+                    {
+                        allButtons.Add(row.ToArray());
+                        row = new List<InlineKeyboardButton>();
                     }
                 }
-                else
-                {
-                    fileUrl = postInAlbum.GetFileUrl();
-                }
-                if (fileUrl.Equals("") || fileUrl.Contains(".gif") || fileUrl.Contains(".webm")) continue;
-                var media = new InputMediaPhoto
-                {
-                    Media = new InputMedia(fileUrl),
-                    Caption = postInAlbum.GetTags(10)
-                };
-                mediaList.Add(media);
-                links = string.Concat(links, $"\n<a href=\"{postInAlbum.GetPostLink()}\">Post {mediaList.Count}</a>");
-                row.Add(InlineKeyboardButton.WithUrl($"Post {mediaList.Count}", postInAlbum.GetPostLink()));
-                if(row.Count == 2)
+
+                if (row.Count > 0)
                 {
                     allButtons.Add(row.ToArray());
-                    row = new List<InlineKeyboardButton>();
                 }
-            }
+                var keyboard = new InlineKeyboardMarkup(allButtons);
 
-            if (row.Count > 0)
-            {
-                allButtons.Add(row.ToArray());
-            }
-            var keyboard = new InlineKeyboardMarkup(allButtons);
 
-            try
-            {
                 await Bot.SendMediaGroupAsync(ChatId, mediaList, disableNotification: true);
                 await Bot.SendTextMessageAsync(ChatId, "🔗Links", replyMarkup: keyboard, disableNotification: true);
             }
             catch (Exception e)
             {
                 LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:::{e.Message}", ConsoleColor.Red);
-                foreach(var media in mediaList)
+                foreach (var media in mediaList)
                 {
                     LogWrite($"(!) {DateTime.UtcNow}:{media.Media.Url}", ConsoleColor.Red);
                 }
