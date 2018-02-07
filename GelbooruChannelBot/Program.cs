@@ -110,7 +110,7 @@ namespace GelbooruChannelBot
                         }
                     }
                     catch (Exception e)
-                    {
+                    {                       
                         LogWrite($"(!) {DateTime.UtcNow}: {e.Source}:{e.InnerException}:{e.StackTrace}:{e.Message}", ConsoleColor.Red);
                     }
                     LogWrite($"Wait {WaitTime}");
@@ -121,6 +121,7 @@ namespace GelbooruChannelBot
 #pragma warning restore CS0162 // Обнаружен недостижимый код
             });
             thread.Start();
+
             Console.ReadLine();
         }
 
