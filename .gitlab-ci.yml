@@ -1,6 +1,6 @@
 stages:
   - build
-  - deploy.
+  - deploy
   
 job1_build:
  image: microsoft/dotnet:latest
