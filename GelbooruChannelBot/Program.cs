@@ -121,6 +121,7 @@ namespace GelbooruChannelBot
 #pragma warning restore CS0162 // Обнаружен недостижимый код
             });
             thread.Start();
+            thread.Join();
             Console.ReadLine();
         }
 
