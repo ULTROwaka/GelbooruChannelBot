@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.InlineKeyboardButtons;
+using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace GelbooruChannelBot
@@ -134,9 +134,8 @@ namespace GelbooruChannelBot
         {
 
             bool firstTry = false;
-            #if RELEASE
+
             if (storage.Count == 0) firstTry = true;
-            #endif
 
             List<PostBase> newPosts = new List<PostBase>();
             url = url.Replace("*limit*", $"limit={count}");
