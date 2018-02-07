@@ -1,16 +1,8 @@
-FROM microsoft/dotnet:sdk AS build-env
+FROM microsoft/dotnet:latest
+
+COPY . /app
+RUN bash -c 'ls -la /app'
 WORKDIR /app
+#RUN dotnet restore GelbooruChannelBot.sln
 
-# copy csproj and restore as distinct layers
-COPY *.csproj ./
-RUN dotnet restore
-
-# copy everything else and build
-COPY . ./
-RUN dotnet publish -c Release -o out
-
-# build runtime image
-FROM microsoft/dotnet:runtime
-WORKDIR /app
-COPY --from=build-env /app/out ./
-ENTRYPOINT ["dotnet", "GelbooruChannelBot.dll"]
+ENTRYPOINT dotnet run --configuration Debug --project ./GelbooruChannelBot
