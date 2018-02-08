@@ -6,8 +6,9 @@ job1_build:
  image: microsoft/dotnet:latest
  stage: build
  script:
-  - dotnet restore GelbooruChannelBot
-  - dotnet build GelbooruChannelBot
+   - dotnet restore GelbooruChannelBot
+   - dotnet build GelbooruChannelBot
+
  only:
    - dev
    - master
