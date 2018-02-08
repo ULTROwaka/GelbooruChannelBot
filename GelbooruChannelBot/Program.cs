@@ -135,9 +135,9 @@ namespace GelbooruChannelBot
         {
 
             bool firstTry = false;
-
-            //if (storage.Count == 0) firstTry = true;
-
+#if RELEASE
+            if (storage.Count == 0) firstTry = true;
+#endif
             List<PostBase> newPosts = new List<PostBase>();
             url = url.Replace("*limit*", $"limit={count}");
             Console.WriteLine($"{DateTime.UtcNow}: Request {url}");
