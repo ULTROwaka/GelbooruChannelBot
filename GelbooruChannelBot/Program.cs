@@ -87,7 +87,7 @@ namespace GelbooruChannelBot
             }
 
             Bot.Timeout = new TimeSpan(0, 1, 0);
-            var thread = new Thread(async () =>
+            var thread = new Thread( () =>
             {
                 LogWrite($"{DateTime.UtcNow}: Thread Created");
                 while (true)
@@ -98,13 +98,13 @@ namespace GelbooruChannelBot
                         switch (Instance)
                         {
                             case "Gelbooru":
-                                await SendToChannel(GetNewestPosts<GelbooruPost>(Url, OldPostIdList, PostsPerCheck));
+                                 SendToChannel(GetNewestPosts<GelbooruPost>(Url, OldPostIdList, PostsPerCheck)).Wait();
                                 break;
                             case "Yandere":
-                                await SendToChannel(GetNewestPosts<YanderePost>(Url, OldPostIdList, PostsPerCheck));
+                                 SendToChannel(GetNewestPosts<YanderePost>(Url, OldPostIdList, PostsPerCheck)).Wait();
                                 break;
                             case "Danbooru":
-                                await SendToChannel(GetNewestPosts<DanbooruPost>(Url, OldPostIdList, PostsPerCheck));
+                                 SendToChannel(GetNewestPosts<DanbooruPost>(Url, OldPostIdList, PostsPerCheck)).Wait();
                                 break;
                             default: Console.WriteLine($"(!) {DateTime.UtcNow}: {Instance} can`t start"); break;
                         }
