@@ -31,7 +31,7 @@ deploy_yandere:
   - env | sed -n '/CHANNEL/p; /MYSQL/p' > .env
   - docker build -t yandere-channel-bot .
   - docker stop yandere-channel-bot || true && docker rm yandere-channel-bot || true
-  - docker run --name yandere-channel-bot -d --env-file=.env yandere-channel-bot
+  - docker run --name yandere-channel-bot --restart=always -d --env-file=.env yandere-channel-bot
  environment:
     name: Yande.re
  only:
@@ -55,7 +55,7 @@ deploy_gelbooru:
   - env | sed -n '/CHANNEL/p; /MYSQL/p' > .env
   - docker build -t gelbooruchannelbot .
   - docker stop gelbooruchannelbot || true && docker rm gelbooruchannelbot || true
-  - docker run --name gelbooruchannelbot -d --env-file=.env gelbooruchannelbot
+  - docker run --name gelbooruchannelbot --restart=always -d --env-file=.env gelbooruchannelbot
  environment:
     name: Gelbooru.com
  only:
