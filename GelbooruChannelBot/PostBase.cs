@@ -6,8 +6,8 @@ namespace GelbooruChannelBot
 {
     abstract class PostBase : IEquatable<PostBase>
     {
-        protected List<string> ImportantTags = new List<string> {"#loli", "#futanari", "#3d", "#yuri", "#happy_sex", "#vaginal",
-           "#cum_in_pussy", "#cervical_penetration", "#x_ray", "#ahegao", "#animated", "#animated_gif", "#cosplay", "#looking_at_viewer",
+        protected List<string> ImportantTags = new List<string> {"#audio #loli", "#futanari", "#3d", "#yuri", "#happy_sex", "#vaginal",
+           "#cum_in_pussy", "#cervical_penetration", "#x_ray", "#ahegao", "#cosplay", "#looking_at_viewer",
             "#looking_at_viewer", "#as109", "#feral_lemma", "#bestiality", "#torogao",  "#thigh_high", "#dildo", "#bondage", "#masturbation",
             "#solo", "#anus", "#huge_penis", "#anal", "#oral", "#gokkun", "#gs_mantis", "#wntame", "#zhaoyebai"};
 

@@ -1,3 +1,5 @@
+using MediaToolkit;
+using MediaToolkit.Model;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -165,7 +167,9 @@ namespace GelbooruChannelBot
                 foreach (var post in posts)
                 {
                     //Выбираем только новые посты, no homo
-                    if (!storage.Contains(post.GetId()) && !post.GetTags().Contains("#yaoi") && !post.GetTags().Contains("#male_focus"))
+                    if (!storage.Contains(post.GetId()) 
+                        && !post.GetTags().Contains("#yaoi")
+                        && !post.GetTags().Contains("#male_focus"))
                     {
                         storage.Add(post.GetId());
                         if (!firstTry)
@@ -231,6 +235,11 @@ namespace GelbooruChannelBot
                 PostInfoLog(post);
                 if (post.GetFileUrl().Contains(".webm"))
                 {
+                    using (var client = new WebClient())
+                    {
+                       client.DownloadFile(post.GetFileUrl(), $"{post.GetId()}.webm");
+                    }
+
                     var keyboard = new InlineKeyboardMarkup(new[]
                                     {
                                     InlineKeyboardButton.WithUrl("Post", post.GetPostLink())
@@ -238,9 +247,24 @@ namespace GelbooruChannelBot
 
                     try
                     {
+
+                        var inputFile = new MediaFile { Filename = $"{post.GetId()}.webm" };
+                        var outputFile = new MediaFile { Filename = $"{post.GetId()}.mp4" };
+
+                        using (var engine = new Engine())
+                        {
+                            engine.Convert(inputFile, outputFile, new MediaToolkit.Options.ConversionOptions { VideoSize = MediaToolkit.Options.VideoSize.Nhd });
+                        }
+
                         LogWrite($"{DateTime.UtcNow}:Send WebM {post.GetId()}", ConsoleColor.Yellow);
+                        /*
                         await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{post.GetTags(15)}",
-                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);
+                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);*/
+                        using (var stream = System.IO.File.Open($"{post.GetId()}.mp4", FileMode.Open))
+                        {
+                            await Bot.SendVideoAsync(ChatId, new InputOnlineFile(stream), caption: post.GetTags(15), replyMarkup: keyboard, disableNotification: true);
+                        }
+                        
                         LogWrite($"{DateTime.UtcNow}:WebM sended {post.GetId()}", ConsoleColor.Green);
                     }
                     catch (Exception e)
@@ -249,9 +273,15 @@ namespace GelbooruChannelBot
                             $"(url: {post.GetFileUrl()})\n\t (url: {post.GetSampleUrl()})",
                             ConsoleColor.Red, 1);
                     }
+                    finally
+                    {
+                        System.IO.File.Delete($"{post.GetId()}.webm");
+                        System.IO.File.Delete($"{post.GetId()}.mp4");
+                    }
                 }
             }
         }
+
 
         private static async Task SendGifAsync(IEnumerable<PostBase> posts)
         {
