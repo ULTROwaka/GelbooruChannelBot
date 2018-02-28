@@ -60,3 +60,27 @@ deploy_gelbooru:
     name: Gelbooru.com
  only:
   - master
+
+deploy_dev:
+ variables:
+    ANNOUNCE_CHANNEL_BOT_TOKEN: $ANNOUNCE_CHANNEL_TELEGRAM_BOT_TOKEN
+    ANNOUNCE_CHANNEL_CHAT_ID: $ANNOUNCE_CHANNEL_CHAT_ID
+    CHANNEL_BOT_TOKEN: $DEV_CHANNEL_TELEGRAM_BOT_TOKEN
+    CHANNEL_CHAT_ID: $DEV_CHANNEL_CHAT_ID
+    CHANNEL_REQUEST_URL: $DEV_CHANNEL_REQUEST_URL
+    MYSQL_USER_NAME: $MYSQL_USER
+    MYSQL_USER_PASSWORD: $MYSQL_PASSWORD
+    MYSQL_USER_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+ image: docker:latest
+ stage: deploy
+ dependencies:
+  - job1_build
+ script:
+  - env | sed -n '/CHANNEL/p; /MYSQL/p' > .env
+  - docker build -t dev_gelbooruchannelbot .
+  - docker stop dev_gelbooruchannelbot || true && docker rm dev_gelbooruchannelbot || true
+  - docker run --name dev_gelbooruchannelbot -d --env-file=.env dev_gelbooruchannelbot
+ environment:
+    name: Dev_Gelbooru.com
+ only:
+  - dev
