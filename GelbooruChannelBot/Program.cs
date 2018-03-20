@@ -118,9 +118,6 @@ namespace GelbooruChannelBot
                     LogWrite($"Wait {WaitTime}");
                     Thread.Sleep(WaitTime);                    
                 }
-#pragma warning disable CS0162 // Обнаружен недостижимый код
-                LogWrite($"{DateTime.UtcNow}: Thread Dead");
-#pragma warning restore CS0162 // Обнаружен недостижимый код
             });
             thread.Start();
             thread.Join();
@@ -138,7 +135,7 @@ namespace GelbooruChannelBot
 
             bool firstTry = false;
 #if RELEASE
-            if (storage.Count == 0) firstTry = true;
+            //if (storage.Count == 0) firstTry = true;
 #endif
             List<PostBase> newPosts = new List<PostBase>();
             url = url.Replace("*limit*", $"limit={count}");
