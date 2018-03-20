@@ -237,7 +237,9 @@ namespace GelbooruChannelBot
                 {
                     using (var client = new WebClient())
                     {
-                       client.DownloadFile(post.GetFileUrl(), $"{post.GetId()}.webm");
+                        LogWrite("Downloading...");
+                        client.DownloadFile(post.GetFileUrl(), $"{post.GetId()}.webm");
+                        LogWrite("Downloaded");
                     }
 
                     var keyboard = new InlineKeyboardMarkup(new[]
@@ -253,13 +255,13 @@ namespace GelbooruChannelBot
 
                         using (var engine = new Engine())
                         {
+                            LogWrite("Converting...");
                             engine.Convert(inputFile, outputFile, new MediaToolkit.Options.ConversionOptions { VideoSize = MediaToolkit.Options.VideoSize.Nhd });
+                            LogWrite("Converted");
                         }
 
                         LogWrite($"{DateTime.UtcNow}:Send WebM {post.GetId()}", ConsoleColor.Yellow);
-                        /*
-                        await Bot.SendTextMessageAsync(ChatId, $"💕<a href=\"{post.GetPostLink()}\">WebM Link</a>💕\n{post.GetTags(15)}",
-                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: keyboard, disableNotification: true);*/
+
                         using (var stream = System.IO.File.Open($"{post.GetId()}.mp4", FileMode.Open))
                         {
                             await Bot.SendVideoAsync(ChatId, new InputOnlineFile(stream), caption: post.GetTags(15), replyMarkup: keyboard, disableNotification: true);
@@ -275,8 +277,10 @@ namespace GelbooruChannelBot
                     }
                     finally
                     {
+                        LogWrite("Deleting...");
                         System.IO.File.Delete($"{post.GetId()}.webm");
                         System.IO.File.Delete($"{post.GetId()}.mp4");
+                        LogWrite("Deleted");
                     }
                 }
             }
