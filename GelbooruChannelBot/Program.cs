@@ -28,7 +28,7 @@ namespace GelbooruChannelBot
         static string Url;
         static List<string> OldPostIdList = new List<string>();
         static readonly int MaxOldPostsCount = 80;
-        static readonly int PostsPerCheck = 2;
+        static readonly int PostsPerCheck = 40;
         static readonly int WaitTime = 300000;
 
         static string Instance = "N/A";
@@ -274,10 +274,10 @@ namespace GelbooruChannelBot
                     }
                     finally
                     {
-                       /* LogWrite("Deleting...");
+                        LogWrite("Deleting...");
                         System.IO.File.Delete($"{post.GetId()}.webm");
                         System.IO.File.Delete($"{post.GetId()}.mp4");
-                        LogWrite("Deleted");*/
+                        LogWrite("Deleted");
                     }
                 }
             }
