@@ -28,7 +28,7 @@ namespace GelbooruChannelBot
         static string Url;
         static List<string> OldPostIdList = new List<string>();
         static readonly int MaxOldPostsCount = 80;
-        static readonly int PostsPerCheck = 40;
+        static readonly int PostsPerCheck = 2;
         static readonly int WaitTime = 300000;
 
         static string Instance = "N/A";
