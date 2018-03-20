@@ -274,10 +274,10 @@ namespace GelbooruChannelBot
                     }
                     finally
                     {
-                        LogWrite("Deleting...");
+                       /* LogWrite("Deleting...");
                         System.IO.File.Delete($"{post.GetId()}.webm");
                         System.IO.File.Delete($"{post.GetId()}.mp4");
-                        LogWrite("Deleted");
+                        LogWrite("Deleted");*/
                     }
                 }
             }
