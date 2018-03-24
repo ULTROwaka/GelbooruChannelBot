@@ -165,7 +165,7 @@ namespace GelbooruChannelBot
                 foreach (var post in posts)
                 {
                     //Выбираем только новые посты, no homo
-                    if (!storage.Contains(post.GetId()) && !post.GetTags().Contains("#yaoi") && !post.GetTags().Contains("#male_focus") && !post.GetTags().Contains("#fat") && !post.GetTags().Contains("#pokemon"))
+                    if (!storage.Contains(post.GetId()) && !post.GetTags().Contains("#yaoi") && !post.GetTags().Contains("#male_focus") && !post.GetTags().Contains("#furry") && !post.GetTags().Contains("#fat") && !post.GetTags().Contains("#pokemon"))
                     {
                         storage.Add(post.GetId());
                         if (!firstTry)
