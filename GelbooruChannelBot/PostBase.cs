@@ -35,7 +35,7 @@ namespace GelbooruChannelBot
             foreach (var tag in tags.Split(' '))
             {
                 if (IsUnavaibleTag(tag)) continue;
-                outTags = String.Concat(outTags, String.Concat(" #", tag.Replace("-", "_").Replace("/", "_").Replace("`","_").Replace(".","_").Replace("(", "").Replace(")", "")));
+                outTags = String.Concat(outTags, String.Concat(" #", tag.Replace("-", "_").Replace("/", "_").Replace("`","_").Replace("'","_").Replace(".","_").Replace("(", "").Replace(")", "")));
             }
 
             return outTags;
