@@ -56,7 +56,7 @@ namespace GelbooruChannelBot
 
         public override string GetPostLink()
         {
-            return $"https://gelbooru.com/index.php?page=post&s=view&api_key=b33532643015804022aaded16a4cf7c09f350e10c220cdbca765c2228d97aa54&user_id=320744&id={Id}";
+            return $"https://gelbooru.com/index.php?page=post&s=view&id={Id}";
         }
 
         public override string GetId()
